@@ -28,7 +28,7 @@ import { registerIndexCommand } from './commands/index.js';
 import { registerMergeCommand } from './commands/merge.js';
 import { registerTranscribeCommand } from './commands/transcribe.js';
 
-const VERSION = '1.2.0';
+const VERSION = '1.5.0';
 
 export function createProgram() {
   const program = new Command();

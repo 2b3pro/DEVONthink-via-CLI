@@ -417,6 +417,52 @@ dt get props ABC123-DEF456
 dt get props "x-devonthink-item://ABC123-DEF456"
 ```
 
+## Stdin Piping Support
+
+Several commands support reading from stdin using `-` as a placeholder, enabling powerful shell pipelines.
+
+### Content from Stdin
+
+```bash
+# Create record with content piped from stdin
+echo "# My Note" | dt create record -n "Note" -T markdown -d "Inbox" -c -
+
+# Update record with content from stdin
+cat updated.md | dt update <uuid> -m setting -c -
+
+# Pipe content from another command
+curl -s https://api.example.com/data | dt create record -n "API Data" -T txt -d "Inbox" -c -
+```
+
+### UUIDs from Stdin
+
+```bash
+# Move records from search results
+dt search query "old project" -q | dt move - -t <archive-group-uuid>
+
+# Delete multiple records
+dt search tags "temp" -q | dt delete -
+
+# Batch preview from list
+dt list inbox -q | dt batch preview -u -
+
+# Batch verify from search
+dt search query "recent" -q | dt batch verify -u -
+```
+
+### Pipeline Examples
+
+```bash
+# Search, filter, and move in one pipeline
+dt search query "2023" -q | head -10 | dt move - -t <archive-uuid>
+
+# Process search results with jq and pipe to batch
+dt search tags "review" --json | jq -r '.results[].uuid' | dt batch preview -u -
+
+# Chain with x-devonthink-item:// URLs
+echo "x-devonthink-item://ABC123-DEF456" | dt move - -t <group-uuid>
+```
+
 ## Testing
 
 The CLI includes a comprehensive test suite using Node.js native test runner.
@@ -433,7 +479,7 @@ npm test -- --test-reporter=spec
 
 ### Test Database
 
-Tests require a DEVONthink database named "Test_Database" to be open. The test suite includes 48 tests covering all major commands:
+Tests require a DEVONthink database named "Test_Database" to be open. The test suite includes 56 tests covering all major commands:
 
 - Status checks
 - Get operations (props, preview, selection, concordance)
@@ -450,6 +496,7 @@ Tests require a DEVONthink database named "Test_Database" to be open. The test s
 - Reveal/open operations
 - Convert operations
 - Import operations
+- Stdin piping support (content and UUID pipelines)
 
 ### Test Helpers
 

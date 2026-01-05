@@ -1,27 +1,43 @@
 /**
  * Delete Command
  * Delete records (move to trash)
- * @version 1.0.0
+ * @version 1.1.0
  * @tested 2026-01-05
  */
 
 import { runJxa, requireDevonthink } from '../jxa-runner.js';
 import { print, printError } from '../output.js';
+import { readUuidsFromStdin, isStdinMarker } from '../utils.js';
 
 export function registerDeleteCommand(program) {
   program
-    .command('delete <uuid>')
+    .command('delete <uuid...>')
     .alias('rm')
     .alias('trash')
-    .description('Delete a record (moves to Trash)')
+    .description('Delete record(s) - moves to Trash (use - to read UUIDs from stdin)')
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Suppress output on success')
-    .action(async (uuid, options) => {
+    .action(async (uuids, options) => {
       try {
         await requireDevonthink();
 
-        const result = await runJxa('write', 'deleteRecord', [uuid]);
+        // Read UUIDs from stdin if first arg is "-"
+        let recordUuids = uuids;
+        if (uuids.length === 1 && isStdinMarker(uuids[0])) {
+          recordUuids = await readUuidsFromStdin();
+          if (recordUuids.length === 0) {
+            throw new Error('No UUIDs received from stdin');
+          }
+        }
+
+        // Use batch delete for multiple UUIDs, single for one
+        let result;
+        if (recordUuids.length === 1) {
+          result = await runJxa('write', 'deleteRecord', [recordUuids[0]]);
+        } else {
+          result = await runJxa('write', 'batchDelete', [JSON.stringify(recordUuids)]);
+        }
 
         if (!options.quiet || !result.success) {
           print(result, options);

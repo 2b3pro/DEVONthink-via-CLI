@@ -1,12 +1,13 @@
 /**
  * Batch Commands
  * Batch operations on multiple records
- * @version 1.0.0
+ * @version 1.1.0
  * @tested 2026-01-05
  */
 
 import { runJxa, requireDevonthink } from '../jxa-runner.js';
 import { print, printError } from '../output.js';
+import { readUuidsFromStdin, isStdinMarker } from '../utils.js';
 
 export function registerBatchCommand(program) {
   const batch = program
@@ -17,7 +18,7 @@ export function registerBatchCommand(program) {
   batch
     .command('preview')
     .description('Get previews for multiple records')
-    .requiredOption('-u, --uuids <uuids...>', 'UUIDs of records to preview')
+    .requiredOption('-u, --uuids <uuids...>', 'UUIDs of records to preview (use - for stdin)')
     .option('-l, --length <chars>', 'Maximum characters per preview', '3000')
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
@@ -26,7 +27,16 @@ export function registerBatchCommand(program) {
       try {
         await requireDevonthink();
 
-        const uuids = Array.isArray(options.uuids) ? options.uuids : [options.uuids];
+        let uuids = Array.isArray(options.uuids) ? options.uuids : [options.uuids];
+
+        // Read UUIDs from stdin if first value is "-"
+        if (uuids.length === 1 && isStdinMarker(uuids[0])) {
+          uuids = await readUuidsFromStdin();
+          if (uuids.length === 0) {
+            throw new Error('No UUIDs received from stdin');
+          }
+        }
+
         const args = [JSON.stringify(uuids), options.length || '3000'];
 
         const result = await runJxa('read', 'batchPreview', args);
@@ -45,7 +55,7 @@ export function registerBatchCommand(program) {
   batch
     .command('verify')
     .description('Verify multiple records after operations')
-    .requiredOption('-u, --uuids <uuids...>', 'UUIDs of records to verify')
+    .requiredOption('-u, --uuids <uuids...>', 'UUIDs of records to verify (use - for stdin)')
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Minimal output')
@@ -53,7 +63,16 @@ export function registerBatchCommand(program) {
       try {
         await requireDevonthink();
 
-        const uuids = Array.isArray(options.uuids) ? options.uuids : [options.uuids];
+        let uuids = Array.isArray(options.uuids) ? options.uuids : [options.uuids];
+
+        // Read UUIDs from stdin if first value is "-"
+        if (uuids.length === 1 && isStdinMarker(uuids[0])) {
+          uuids = await readUuidsFromStdin();
+          if (uuids.length === 0) {
+            throw new Error('No UUIDs received from stdin');
+          }
+        }
+
         const args = [JSON.stringify(uuids)];
 
         const result = await runJxa('read', 'batchVerify', args);

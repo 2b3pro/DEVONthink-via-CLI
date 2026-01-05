@@ -3,6 +3,42 @@
  */
 
 /**
+ * Read all content from stdin
+ * @returns {Promise<string>} - Content from stdin
+ */
+export async function readStdin() {
+  const chunks = [];
+  for await (const chunk of process.stdin) {
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks).toString('utf-8').trim();
+}
+
+/**
+ * Read UUIDs from stdin (one per line, supports x-devonthink-item:// URLs)
+ * @returns {Promise<string[]>} - Array of UUIDs
+ */
+export async function readUuidsFromStdin() {
+  const content = await readStdin();
+  if (!content) return [];
+
+  return content
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+    .map(line => extractUuid(line) || line);  // Extract UUID from URLs if present
+}
+
+/**
+ * Check if input indicates stdin should be read
+ * @param {string} value - The input value
+ * @returns {boolean} - True if stdin should be read
+ */
+export function isStdinMarker(value) {
+  return value === '-';
+}
+
+/**
  * Regex for DEVONthink UUIDs: alphanumeric with hyphens, typically uppercase
  * Match patterns like: A1B2C3D4-E5F6-7890-ABCD-EF1234567890 or shorter variants
  */

@@ -7,6 +7,7 @@ import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert';
 import {
   runCommand,
+  runCommandWithStdin,
   createTestRecord,
   createTestGroup,
   deleteTestRecord,
@@ -640,6 +641,170 @@ describe('DevonThink CLI Commands', () => {
         '-d', TEST_DATABASE.name
       ], { expectFailure: true });
       assert.strictEqual(result.success, false);
+    });
+  });
+
+  // ============================================================
+  // STDIN SUPPORT TESTS
+  // ============================================================
+  describe('stdin support', () => {
+    describe('create record with stdin content', () => {
+      it('should create record with content from stdin', async () => {
+        const name = uniqueName('StdinCreate');
+        const stdinContent = 'This content was piped from stdin';
+
+        const result = await runCommandWithStdin(
+          ['create', 'record', '-n', name, '-T', 'markdown', '-d', TEST_DATABASE.name, '-c', '-'],
+          stdinContent
+        );
+
+        assert.strictEqual(result.success, true);
+        assert.ok(result.uuid);
+        createdRecords.push(result.uuid);
+      });
+    });
+
+    describe('update with stdin content', () => {
+      let stdinUpdateUuid;
+
+      before(async () => {
+        stdinUpdateUuid = await createTestRecord({
+          name: uniqueName('StdinUpdate'),
+          content: 'Original content for stdin update test'
+        });
+        createdRecords.push(stdinUpdateUuid);
+      });
+
+      it('should update record with content from stdin', async () => {
+        const newContent = 'Updated via stdin';
+
+        const result = await runCommandWithStdin(
+          ['update', stdinUpdateUuid, '-m', 'setting', '-c', '-'],
+          newContent
+        );
+
+        assert.strictEqual(result.success, true);
+      });
+    });
+
+    describe('move with stdin UUIDs', () => {
+      let stdinMoveRecord1;
+      let stdinMoveRecord2;
+      let stdinMoveDestGroup;
+
+      before(async () => {
+        stdinMoveRecord1 = await createTestRecord({ name: uniqueName('StdinMove1') });
+        stdinMoveRecord2 = await createTestRecord({ name: uniqueName('StdinMove2') });
+        stdinMoveDestGroup = await createTestGroup(uniqueName('StdinMoveDest'));
+        createdRecords.push(stdinMoveRecord1, stdinMoveRecord2, stdinMoveDestGroup);
+      });
+
+      it('should move records with UUIDs from stdin', async () => {
+        const stdinInput = `${stdinMoveRecord1}\n${stdinMoveRecord2}`;
+
+        const result = await runCommandWithStdin(
+          ['move', '-', '-t', stdinMoveDestGroup],
+          stdinInput
+        );
+
+        assert.strictEqual(result.success, true);
+      });
+
+      it('should accept x-devonthink-item:// URLs from stdin', async () => {
+        const record = await createTestRecord({ name: uniqueName('StdinMoveURL') });
+        createdRecords.push(record);
+
+        const stdinInput = `x-devonthink-item://${record}`;
+
+        const result = await runCommandWithStdin(
+          ['move', '-', '-t', stdinMoveDestGroup],
+          stdinInput
+        );
+
+        assert.strictEqual(result.success, true);
+      });
+    });
+
+    describe('delete with stdin UUIDs', () => {
+      it('should delete single record with UUID from stdin', async () => {
+        const recordToDelete = await createTestRecord({ name: uniqueName('StdinDelete1') });
+
+        const result = await runCommandWithStdin(
+          ['delete', '-'],
+          recordToDelete
+        );
+
+        assert.strictEqual(result.success, true);
+      });
+
+      it('should delete multiple records with UUIDs from stdin', async () => {
+        const record1 = await createTestRecord({ name: uniqueName('StdinDelete2') });
+        const record2 = await createTestRecord({ name: uniqueName('StdinDelete3') });
+
+        const stdinInput = `${record1}\n${record2}`;
+
+        const result = await runCommandWithStdin(
+          ['delete', '-'],
+          stdinInput
+        );
+
+        assert.strictEqual(result.success, true);
+        assert.strictEqual(result.count, 2);
+      });
+    });
+
+    describe('batch preview with stdin UUIDs', () => {
+      let batchStdinRecord1;
+      let batchStdinRecord2;
+
+      before(async () => {
+        batchStdinRecord1 = await createTestRecord({
+          name: uniqueName('BatchStdin1'),
+          content: 'Content for batch stdin test 1'
+        });
+        batchStdinRecord2 = await createTestRecord({
+          name: uniqueName('BatchStdin2'),
+          content: 'Content for batch stdin test 2'
+        });
+        createdRecords.push(batchStdinRecord1, batchStdinRecord2);
+      });
+
+      it('should get previews with UUIDs from stdin', async () => {
+        const stdinInput = `${batchStdinRecord1}\n${batchStdinRecord2}`;
+
+        const result = await runCommandWithStdin(
+          ['batch', 'preview', '-u', '-'],
+          stdinInput
+        );
+
+        assert.strictEqual(result.success, true);
+        assert.ok(Array.isArray(result.results));
+        assert.strictEqual(result.results.length, 2);
+      });
+    });
+
+    describe('batch verify with stdin UUIDs', () => {
+      let verifyStdinRecord1;
+      let verifyStdinRecord2;
+
+      before(async () => {
+        verifyStdinRecord1 = await createTestRecord({ name: uniqueName('VerifyStdin1') });
+        verifyStdinRecord2 = await createTestRecord({ name: uniqueName('VerifyStdin2') });
+        createdRecords.push(verifyStdinRecord1, verifyStdinRecord2);
+      });
+
+      it('should verify records with UUIDs from stdin', async () => {
+        const stdinInput = `${verifyStdinRecord1}\n${verifyStdinRecord2}`;
+
+        const result = await runCommandWithStdin(
+          ['batch', 'verify', '-u', '-'],
+          stdinInput
+        );
+
+        assert.strictEqual(result.success, true);
+        assert.ok(Array.isArray(result.results));
+        assert.strictEqual(result.results.length, 2);
+      });
     });
   });
 

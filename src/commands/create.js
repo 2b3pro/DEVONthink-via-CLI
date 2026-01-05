@@ -9,6 +9,7 @@ import { runJxa, requireDevonthink } from '../jxa-runner.js';
 import { print, printError } from '../output.js';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { readStdin, isStdinMarker } from '../utils.js';
 
 export function registerCreateCommand(program) {
   const create = program
@@ -24,7 +25,7 @@ export function registerCreateCommand(program) {
     .requiredOption('-T, --type <type>', 'Record type: markdown, txt, rtf, bookmark, html, group')
     .requiredOption('-d, --database <nameOrUuid>', 'Target database (name or UUID)')
     .option('-g, --group <pathOrUuid>', 'Destination group (path or UUID)', '/')
-    .option('-c, --content <text>', 'Content for text-based records')
+    .option('-c, --content <text>', 'Content for text-based records (use - for stdin)')
     .option('-f, --file <path>', 'Read content from file')
     .option('-u, --url <url>', 'URL for bookmark records')
     .option('-t, --tag <tag>', 'Add tag (can be used multiple times)', collectTags, [])
@@ -49,7 +50,14 @@ export function registerCreateCommand(program) {
             throw new Error(`Cannot read file: ${options.file} - ${err.message}`);
           }
         } else if (options.content) {
-          params.content = options.content;
+          if (isStdinMarker(options.content)) {
+            params.content = await readStdin();
+            if (!params.content) {
+              throw new Error('No content received from stdin');
+            }
+          } else {
+            params.content = options.content;
+          }
         }
 
         if (options.url) {

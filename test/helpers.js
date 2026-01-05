@@ -68,6 +68,53 @@ export async function runCommand(args, options = {}) {
 }
 
 /**
+ * Execute a dt command with stdin input
+ * @param {string[]} args - Command arguments
+ * @param {string} stdinInput - Input to pipe to stdin
+ * @param {object} options - Execution options
+ * @returns {Promise<object>} Parsed JSON result
+ */
+export async function runCommandWithStdin(args, stdinInput, options = {}) {
+  const { timeout = 60000, expectFailure = false } = options;
+
+  return new Promise((resolve, reject) => {
+    const child = execFile(
+      'node',
+      [CLI_PATH, ...args, '--json'],
+      {
+        timeout,
+        maxBuffer: 10 * 1024 * 1024,
+        cwd: import.meta.dirname + '/..'
+      },
+      (error, stdout, stderr) => {
+        const trimmed = stdout.trim();
+
+        if (error && !expectFailure) {
+          reject(error);
+          return;
+        }
+
+        if (trimmed) {
+          try {
+            resolve(JSON.parse(trimmed));
+          } catch {
+            resolve({ success: !error, output: trimmed, error: error?.message });
+          }
+        } else if (error) {
+          resolve({ success: false, error: error.message });
+        } else {
+          resolve({ success: true });
+        }
+      }
+    );
+
+    // Write stdin input and close
+    child.stdin.write(stdinInput);
+    child.stdin.end();
+  });
+}
+
+/**
  * Run a raw JXA script for test setup/teardown
  * @param {string} script - JXA script to execute
  * @returns {Promise<object>} Parsed result

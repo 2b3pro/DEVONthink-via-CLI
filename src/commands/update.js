@@ -8,13 +8,14 @@
 import { runJxa, requireDevonthink } from '../jxa-runner.js';
 import { print, printError } from '../output.js';
 import { readFileSync } from 'node:fs';
+import { readStdin, isStdinMarker } from '../utils.js';
 
 export function registerUpdateCommand(program) {
   program
     .command('update <uuid>')
     .description('Update text content of a record (plain/rich text, Markdown, HTML)')
     .requiredOption('-m, --mode <mode>', 'Update mode: setting (replace), inserting (after metadata), appending')
-    .option('-c, --content <text>', 'Text content to update')
+    .option('-c, --content <text>', 'Text content to update (use - for stdin)')
     .option('-f, --file <path>', 'Read content from file')
     .option('-u, --url <url>', 'URL associated with the text')
     .option('--json', 'Output raw JSON')
@@ -37,7 +38,14 @@ export function registerUpdateCommand(program) {
             throw new Error(`Cannot read file: ${options.file} - ${err.message}`);
           }
         } else if (options.content !== undefined) {
-          text = options.content;
+          if (isStdinMarker(options.content)) {
+            text = await readStdin();
+            if (!text) {
+              throw new Error('No content received from stdin');
+            }
+          } else {
+            text = options.content;
+          }
         } else {
           throw new Error('Either --content or --file is required');
         }

@@ -7,12 +7,13 @@
 
 import { runJxa, requireDevonthink } from '../jxa-runner.js';
 import { print, printError } from '../output.js';
+import { readUuidsFromStdin, isStdinMarker } from '../utils.js';
 
 export function registerMoveCommand(program) {
   program
     .command('move <uuid...>')
     .alias('mv')
-    .description('Move record(s) to a different group')
+    .description('Move record(s) to a different group (use - to read UUIDs from stdin)')
     .requiredOption('-t, --to <groupUuid>', 'Destination group (UUID or path with --database)')
     .option('-f, --from <groupUuid>', 'Source group UUID (for moving single instance in same database)')
     .option('-d, --database <nameOrUuid>', 'Database for path-based destination')
@@ -23,8 +24,17 @@ export function registerMoveCommand(program) {
       try {
         await requireDevonthink();
 
+        // Read UUIDs from stdin if first arg is "-"
+        let recordUuids = uuids;
+        if (uuids.length === 1 && isStdinMarker(uuids[0])) {
+          recordUuids = await readUuidsFromStdin();
+          if (recordUuids.length === 0) {
+            throw new Error('No UUIDs received from stdin');
+          }
+        }
+
         const params = {
-          records: uuids,
+          records: recordUuids,
           to: options.to
         };
 

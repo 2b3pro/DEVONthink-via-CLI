@@ -160,6 +160,29 @@ import { escapeString } from '../utils.js';
 const jxa = `record.name = "${escapeString(name)}";`;
 ```
 
+### Stdin Support
+
+Commands can accept content or UUIDs from stdin using `-` as a marker:
+
+```javascript
+import { readStdin, readUuidsFromStdin, isStdinMarker } from '../utils.js';
+
+// For content (create, update)
+if (isStdinMarker(options.content)) {
+  const content = await readStdin();
+}
+
+// For UUID lists (move, delete, batch)
+if (uuids.length === 1 && isStdinMarker(uuids[0])) {
+  const uuids = await readUuidsFromStdin();  // parses one UUID per line
+}
+```
+
+Stdin utilities in `utils.js`:
+- `readStdin()` - Read all stdin content as trimmed string
+- `readUuidsFromStdin()` - Read UUIDs from stdin (one per line, supports `x-devonthink-item://` URLs)
+- `isStdinMarker(value)` - Check if value is `-`
+
 ## JXA/AppleScript Translation
 
 DEVONthink's AppleScript commands translate to JXA:
@@ -278,6 +301,7 @@ describe('my-command', () => {
 | Helper | Purpose |
 |--------|---------|
 | `runCommand(args, opts)` | Execute CLI command, returns parsed JSON |
+| `runCommandWithStdin(args, stdinInput, opts)` | Execute command with stdin input |
 | `createTestRecord({name, type, content, group, tags})` | Create record, returns UUID |
 | `createTestGroup(name, parent)` | Create group, returns UUID |
 | `deleteTestRecord(uuid)` | Move record to trash |
