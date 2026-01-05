@@ -52,26 +52,51 @@ if (!jsonArg) {
 
     if (!record) throw new Error("Record not found: " + uuid);
 
-    // Build update options
-    const updateOptions = {
-      record: record,
-      withText: text,
-      mode: mode
-    };
+    // Get current content for modes that need it
+    const recordType = record.recordType();
+    let success = false;
 
-    if (url && url.length > 0) {
-      updateOptions.URL = url;
+    // Perform update based on mode using direct property access
+    // This is more reliable than the app.update() method in JXA
+    try {
+      switch (mode) {
+        case "setting":
+          // Replace all content
+          record.plainText = text;
+          success = true;
+          break;
+        case "inserting":
+          // Insert after first line (approximate "after metadata" behavior)
+          const currentContent = record.plainText() || "";
+          const firstLineEnd = currentContent.indexOf('\n');
+          if (firstLineEnd === -1) {
+            record.plainText = currentContent + "\n" + text;
+          } else {
+            record.plainText = currentContent.slice(0, firstLineEnd + 1) + text + currentContent.slice(firstLineEnd + 1);
+          }
+          success = true;
+          break;
+        case "appending":
+          // Append to end
+          record.plainText = (record.plainText() || "") + text;
+          success = true;
+          break;
+      }
+
+      // Set URL if provided
+      if (url && url.length > 0) {
+        record.URL = url;
+      }
+    } catch (updateErr) {
+      throw new Error("Update failed: " + updateErr.message);
     }
-
-    // Perform update
-    const success = app.update(updateOptions);
 
     if (success) {
       JSON.stringify({
         success: true,
         uuid: uuid,
         name: record.name(),
-        recordType: record.recordType(),
+        recordType: recordType,
         mode: mode,
         textLength: text.length
       }, null, 2);

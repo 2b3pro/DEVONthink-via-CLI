@@ -1,6 +1,8 @@
 /**
  * List Command
  * List contents of groups, inbox, or by tag
+ * @version 1.0.0
+ * @tested 2026-01-05
  */
 
 import { runJxa, requireDevonthink } from '../jxa-runner.js';

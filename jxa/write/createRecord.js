@@ -88,40 +88,28 @@ if (!jsonArg) {
     // Find destination group (by path or UUID)
     const destination = resolveGroup(app, groupPath || "/", db);
 
-    // Create record options
-    const createOptions = {
+    // Create record properties
+    const createProps = {
       name: name,
-      in: destination
+      type: type
     };
 
-    if (content) createOptions.content = content;
-    if (url) createOptions.URL = url;
+    if (content) createProps.content = content;
+    if (url) createProps.URL = url;
 
-    // Create record based on type
-    let record;
-    switch (type) {
-      case "markdown":
-        record = app.createRecordWith(createOptions, { type: "markdown" });
-        break;
-      case "txt":
-        record = app.createRecordWith(createOptions, { type: "txt" });
-        break;
-      case "rtf":
-        record = app.createRecordWith(createOptions, { type: "rtf" });
-        break;
-      case "bookmark":
-        if (!url) throw new Error("URL required for bookmark type");
-        record = app.createRecordWith(createOptions, { type: "bookmark" });
-        break;
-      case "html":
-        record = app.createRecordWith(createOptions, { type: "html" });
-        break;
-      case "group":
-        record = app.createRecordWith({ name: name, in: destination, type: "group" });
-        break;
-      default:
-        throw new Error("Unknown type: " + type + ". Valid: markdown, txt, rtf, bookmark, html, group");
+    // Validate type
+    const validTypes = ["markdown", "txt", "rtf", "bookmark", "html", "group"];
+    if (!validTypes.includes(type)) {
+      throw new Error("Unknown type: " + type + ". Valid: " + validTypes.join(", "));
     }
+
+    // Bookmark requires URL
+    if (type === "bookmark" && !url) {
+      throw new Error("URL required for bookmark type");
+    }
+
+    // Create record
+    const record = app.createRecordWith(createProps, { in: destination });
 
     if (!record) throw new Error("Failed to create record");
 

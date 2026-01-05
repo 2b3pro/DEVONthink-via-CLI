@@ -1,6 +1,8 @@
 /**
  * Get Command
  * Get record properties, preview, or content
+ * @version 1.0.0
+ * @tested 2026-01-05
  */
 
 import { runJxa, requireDevonthink } from '../jxa-runner.js';
@@ -84,7 +86,7 @@ export function registerGetCommand(program) {
     .command('concordance <uuid>')
     .alias('words')
     .description('Get word list (concordance) of a record')
-    .option('-s, --sort <method>', 'Sort by: weight (default), count, name', 'weight')
+    .option('-s, --sort <method>', 'Sort by: weight (default), frequency, name', 'weight')
     .option('-l, --limit <n>', 'Limit number of words returned', parseInt)
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
@@ -101,6 +103,7 @@ export function registerGetCommand(program) {
         }
 
         if (options.quiet && result.success) {
+          // Output just the words, one per line
           console.log(result.words.join('\n'));
         } else {
           print(result, options);

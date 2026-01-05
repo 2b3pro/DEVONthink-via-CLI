@@ -68,7 +68,7 @@ if (!jsonArg) {
 } else {
   try {
     const params = JSON.parse(jsonArg);
-    const { url, name, database: databaseRef, groupPath, pagination, readability, width, agent, referrer } = params;
+    const { url, name, database: databaseRef, groupPath, pagination, readability, width, agent, referrer, tags } = params;
 
     if (!url) throw new Error("Missing required field: url");
     if (!url.startsWith("http://") && !url.startsWith("https://")) {
@@ -116,6 +116,11 @@ if (!jsonArg) {
 
     if (!record) {
       throw new Error("Failed to create PDF from URL");
+    }
+
+    // Apply tags if specified
+    if (tags && Array.isArray(tags) && tags.length > 0) {
+      record.tags = tags;
     }
 
     JSON.stringify({

@@ -1,6 +1,8 @@
 /**
  * Status Command
  * Check DEVONthink status
+ * @version 1.0.0
+ * @tested 2026-01-05
  */
 
 import { runJxa } from '../jxa-runner.js';

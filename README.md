@@ -154,6 +154,10 @@ dt import ./document.pdf --database "Research" --to "/Papers/2024" --as "Importa
 # Import with OCR
 dt import ./scan.pdf --database "Archive" --ocr --ocr-type pdf
 
+# Import and transcribe audio/video (creates markdown with transcription)
+dt import ./recording.mp3 --database "Notes" --transcribe
+dt import ./interview.mp4 --database "Archive" --transcribe --language en --timestamps
+
 # Index external file/folder (creates reference, doesn't copy)
 dt index ~/Projects/code --database "Development"
 ```
@@ -366,6 +370,67 @@ dt completion zsh > ~/.zsh/completions/_dt
 
 # Generate Fish completions
 dt completion fish > ~/.config/fish/completions/dt.fish
+```
+
+## UUID References
+
+Commands accepting UUIDs also accept DEVONthink item URLs:
+
+```bash
+# Both formats work
+dt get props ABC123-DEF456
+dt get props "x-devonthink-item://ABC123-DEF456"
+```
+
+## Testing
+
+The CLI includes a comprehensive test suite using Node.js native test runner.
+
+### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run tests with verbose output
+npm test -- --test-reporter=spec
+```
+
+### Test Database
+
+Tests require a DEVONthink database named "Test_Database" to be open. The test suite includes 48 tests covering all major commands:
+
+- Status checks
+- Get operations (props, preview, selection, concordance)
+- List operations (group, inbox, tag)
+- Search operations (query, file, path, tags, url, comment)
+- Create operations (record, markdown, group, bookmark)
+- Modify operations (name, tags, comment, metadata)
+- Update operations (content replacement and append)
+- Group management
+- Move, duplicate, replicate operations
+- Delete operations
+- Classification (suggest, batch)
+- Batch operations (preview, verify)
+- Reveal/open operations
+- Convert operations
+- Import operations
+
+### Test Helpers
+
+Test utilities are in `test/helpers.js`:
+
+```javascript
+import { runCommand, createTestRecord, deleteTestRecord } from './helpers.js';
+
+// Run a command and get parsed result
+const result = await runCommand('get props <uuid>');
+
+// Create a test record (auto-cleanup available)
+const record = await createTestRecord({ name: 'Test', type: 'markdown' });
+
+// Clean up
+await deleteTestRecord(record.uuid);
 ```
 
 ## Architecture

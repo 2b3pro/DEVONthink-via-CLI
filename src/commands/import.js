@@ -1,6 +1,8 @@
 /**
  * Import Command
  * Import files into DEVONthink
+ * @version 1.0.0
+ * @tested 2026-01-05
  */
 
 import { execFile } from 'node:child_process';
@@ -25,6 +27,9 @@ export function registerImportCommand(program) {
     .option('--ocr', 'Import with OCR (for PDFs and images)')
     .option('--ocr-type <type>', 'OCR output type (pdf, rtf, text, html, markdown, docx)')
     .option('--background', 'Run OCR in background (do not wait for completion)')
+    .option('--transcribe', 'Transcribe audio/video and create markdown with transcription')
+    .option('--language <code>', 'Transcription language (ISO code like en, de)')
+    .option('--timestamps', 'Include timestamps in transcription')
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUID of imported record')
@@ -38,10 +43,20 @@ export function registerImportCommand(program) {
           throw new Error(`File not found: ${filePath}`);
         }
 
-        // Build JXA script for import (with or without OCR)
-        const jxaScript = options.ocr
-          ? buildOcrImportScript(filePath, options)
-          : buildImportScript(filePath, options);
+        // Build JXA script for import (with OCR, transcribe, or standard)
+        let jxaScript;
+        if (options.transcribe) {
+          jxaScript = buildTranscribeImportScript(filePath, options);
+        } else if (options.ocr) {
+          jxaScript = buildOcrImportScript(filePath, options);
+        } else {
+          jxaScript = buildImportScript(filePath, options);
+        }
+
+        // Debug: output generated script if DEBUG env is set
+        if (process.env.DEBUG) {
+          console.error('Generated JXA script:\n' + jxaScript);
+        }
 
         const { stdout } = await execFileAsync(
           'osascript',
@@ -83,8 +98,8 @@ try {
 ${jxaResolveDatabase('db', dbRef, dbIsUuid)}
 ${jxaResolveGroup('destination', destRef, destIsUuid, 'db', true)}
 
-  // Import the file
-  const importResult = app.import("${escapeString(filePath)}", { to: destination });
+  // Import the file (AppleScript 'import path' -> JXA 'importPath')
+  const importResult = app.importPath("${escapeString(filePath)}", { to: destination });
   if (!importResult) throw new Error("Import failed");
 
   // Get the imported record (use UUID for further manipulation)
@@ -192,6 +207,101 @@ ${jxaResolveGroup('destination', destRef, destIsUuid, 'db', true)}
       recordType: record.recordType(),
       path: record.path(),
       ocr: true
+    }, null, 2);
+  }
+
+} catch (e) {
+  JSON.stringify({ success: false, error: e.message });
+}
+`;
+}
+
+function buildTranscribeImportScript(filePath, options) {
+  const dbRef = options.database;
+  const destRef = options.to || '/';
+  const dbIsUuid = isUuid(dbRef);
+  const destIsUuid = isUuid(destRef);
+  const customName = options.as ? escapeString(options.as) : null;
+  const tags = options.tag || [];
+  const comment = options.comment ? escapeString(options.comment) : null;
+  const language = options.language || null;
+  const timestamps = options.timestamps === true;
+
+  return `
+ObjC.import("Foundation");
+
+try {
+  const app = Application("DEVONthink");
+${jxaResolveDatabase('db', dbRef, dbIsUuid)}
+${jxaResolveGroup('destination', destRef, destIsUuid, 'db', true)}
+
+  // Import the file first (AppleScript 'import path' -> JXA 'importPath')
+  const importResult = app.importPath("${escapeString(filePath)}", { to: destination });
+  if (!importResult) throw new Error("Import failed");
+
+  const record = importResult;
+  const recordUuid = record.uuid();
+  const recordName = ${customName ? `"${customName}"` : 'record.name()'};
+
+  // Set custom name if specified
+  ${customName ? `record.name = "${customName}";` : ''}
+
+  // Set tags if specified
+  ${tags.length > 0 ? `record.tags = ${JSON.stringify(tags)};` : ''}
+
+  // Set comment if specified
+  ${comment ? `record.comment = "${comment}";` : ''}
+
+  // Transcribe the imported record
+  const transcribeOptions = { record: record };
+  ${language ? `transcribeOptions.language = "${language}";` : ''}
+  ${timestamps ? `transcribeOptions.timestamps = true;` : ''}
+
+  const transcription = app.transcribe(transcribeOptions);
+
+  if (!transcription) {
+    JSON.stringify({
+      success: true,
+      uuid: recordUuid,
+      name: record.name(),
+      location: record.location(),
+      database: db.name(),
+      recordType: record.recordType(),
+      path: record.path(),
+      transcription: null,
+      warning: "Transcription failed or returned no content"
+    }, null, 2);
+  } else {
+    // Create markdown document with transcription
+    const mdName = recordName.replace(/\\.[^.]+$/, '') + " - Transcription";
+    const mdContent = "# " + recordName + "\\n\\n" + transcription;
+
+    const mdRecord = app.createRecordWith({
+      name: mdName,
+      type: "markdown",
+      content: mdContent
+    }, { in: destination });
+
+    if (!mdRecord) throw new Error("Failed to create transcription markdown");
+
+    // Copy tags to transcription if any
+    ${tags.length > 0 ? `mdRecord.tags = ${JSON.stringify(tags)};` : ''}
+
+    JSON.stringify({
+      success: true,
+      imported: {
+        uuid: recordUuid,
+        name: record.name(),
+        location: record.location(),
+        recordType: record.recordType(),
+        path: record.path()
+      },
+      transcription: {
+        uuid: mdRecord.uuid(),
+        name: mdRecord.name(),
+        location: mdRecord.location()
+      },
+      database: db.name()
     }, null, 2);
   }
 

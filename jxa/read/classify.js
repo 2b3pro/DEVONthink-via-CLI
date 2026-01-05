@@ -51,10 +51,7 @@ if (!recordUuid) {
       JSON.stringify({ success: false, error: "Record not found: " + recordUuid });
     } else {
       // Build classify options
-      const classifyOptions = {
-        record: record,
-        tags: includeTags
-      };
+      const classifyOptions = { record: record };
 
       // Add database scope if specified (by name or UUID)
       if (databaseRef && databaseRef.length > 0) {
@@ -64,8 +61,8 @@ if (!recordUuid) {
         }
       }
 
-      // Get classification proposals
-      const proposals = app.classifyRecord(record);
+      // Get classification proposals using the classify command
+      const proposals = app.classify(classifyOptions);
 
       if (!proposals || proposals.length === 0) {
         JSON.stringify({

@@ -100,7 +100,7 @@ if (!jsonArg) {
 } else {
   try {
     const params = JSON.parse(jsonArg);
-    const { prompt, name, database, groupPath, engine, size, style, quality, seed, imageUrl, imagePath, promptStrength } = params;
+    const { prompt, name, database, groupPath, engine, size, style, quality, seed, imageUrl, imagePath, promptStrength, tags } = params;
 
     if (!prompt) throw new Error("Missing required field: prompt");
     if (!name) throw new Error("Missing required field: name");
@@ -197,6 +197,11 @@ if (!jsonArg) {
 
     if (!record) {
       throw new Error("Failed to create image record");
+    }
+
+    // Apply tags if specified
+    if (tags && Array.isArray(tags) && tags.length > 0) {
+      record.tags = tags;
     }
 
     JSON.stringify({

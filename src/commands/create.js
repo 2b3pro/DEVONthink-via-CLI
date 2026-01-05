@@ -1,6 +1,8 @@
 /**
  * Create Command
  * Create new records in DEVONthink
+ * @version 1.1.0
+ * @tested 2026-01-05
  */
 
 import { runJxa, requireDevonthink } from '../jxa-runner.js';
@@ -81,6 +83,7 @@ export function registerCreateCommand(program) {
     .option('-r, --readability', 'Declutter page layout (reader mode)')
     .option('--agent <userAgent>', 'Custom user agent string')
     .option('--referrer <url>', 'HTTP referrer URL')
+    .option('-t, --tag <tag>', 'Add tag (can be used multiple times)', collectTags, [])
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUID of created record')
@@ -96,6 +99,7 @@ export function registerCreateCommand(program) {
         if (options.readability) params.readability = true;
         if (options.agent) params.agent = options.agent;
         if (options.referrer) params.referrer = options.referrer;
+        if (options.tag && options.tag.length > 0) params.tags = options.tag;
 
         const result = await runJxa('write', 'createMarkdownFrom', [JSON.stringify(params)]);
         print(result, options);
@@ -121,6 +125,7 @@ export function registerCreateCommand(program) {
     .option('-w, --width <points>', 'PDF width in points', parseInt)
     .option('--agent <userAgent>', 'Custom user agent string')
     .option('--referrer <url>', 'HTTP referrer URL')
+    .option('-t, --tag <tag>', 'Add tag (can be used multiple times)', collectTags, [])
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUID of created record')
@@ -138,6 +143,7 @@ export function registerCreateCommand(program) {
         if (options.width) params.width = options.width;
         if (options.agent) params.agent = options.agent;
         if (options.referrer) params.referrer = options.referrer;
+        if (options.tag && options.tag.length > 0) params.tags = options.tag;
 
         const result = await runJxa('write', 'createPdfFrom', [JSON.stringify(params)]);
         print(result, options);
@@ -162,6 +168,7 @@ export function registerCreateCommand(program) {
     .option('-r, --readability', 'Declutter page layout (reader mode)')
     .option('--agent <userAgent>', 'Custom user agent string')
     .option('--referrer <url>', 'HTTP referrer URL')
+    .option('-t, --tag <tag>', 'Add tag (can be used multiple times)', collectTags, [])
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUID of created record')
@@ -177,8 +184,49 @@ export function registerCreateCommand(program) {
         if (options.readability) params.readability = true;
         if (options.agent) params.agent = options.agent;
         if (options.referrer) params.referrer = options.referrer;
+        if (options.tag && options.tag.length > 0) params.tags = options.tag;
 
         const result = await runJxa('write', 'createWebDocFrom', [JSON.stringify(params)]);
+        print(result, options);
+
+        if (!result.success) {
+          process.exit(1);
+        }
+      } catch (error) {
+        printError(error, options);
+        process.exit(1);
+      }
+    });
+
+  // dt create bookmark <url> - Create a bookmark to an internet or filesystem location
+  create
+    .command('bookmark <url>')
+    .alias('bm')
+    .description('Create a bookmark to an internet URL or filesystem path')
+    .requiredOption('-n, --name <title>', 'Bookmark name/title')
+    .requiredOption('-d, --database <nameOrUuid>', 'Target database (name or UUID)')
+    .option('-g, --group <pathOrUuid>', 'Destination group (path or UUID)', '/')
+    .option('-t, --tag <tag>', 'Add tag (can be used multiple times)', collectTags, [])
+    .option('--json', 'Output raw JSON')
+    .option('--pretty', 'Pretty print JSON output')
+    .option('-q, --quiet', 'Only output UUID of created record')
+    .action(async (url, options) => {
+      try {
+        await requireDevonthink();
+
+        const params = {
+          name: options.name,
+          type: 'bookmark',
+          database: options.database,
+          groupPath: options.group || '/',
+          url: url
+        };
+
+        if (options.tag && options.tag.length > 0) {
+          params.tags = options.tag;
+        }
+
+        const result = await runJxa('write', 'createRecord', [JSON.stringify(params)]);
         print(result, options);
 
         if (!result.success) {
@@ -205,6 +253,7 @@ export function registerCreateCommand(program) {
     .option('--seed <number>', 'Seed for reproducible generation (Flux/Stable Diffusion)', parseInt)
     .option('-i, --image <path>', 'Reference image for img2img (file path or URL)')
     .option('--prompt-strength <value>', 'Prompt vs image balance: 0.0 (image only) to 1.0 (prompt only)', parseFloat)
+    .option('-t, --tag <tag>', 'Add tag (can be used multiple times)', collectTags, [])
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUID of created record')
@@ -225,6 +274,7 @@ export function registerCreateCommand(program) {
         if (options.quality) params.quality = options.quality;
         if (options.seed !== undefined) params.seed = options.seed;
         if (options.promptStrength !== undefined) params.promptStrength = options.promptStrength;
+        if (options.tag && options.tag.length > 0) params.tags = options.tag;
 
         // Handle reference image (file path or URL)
         if (options.image) {
