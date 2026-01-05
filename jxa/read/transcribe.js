@@ -1,10 +1,11 @@
 #!/usr/bin/env osascript -l JavaScript
 // Transcribe speech, text or notes from a DEVONthink record
 // Usage: osascript -l JavaScript transcribe.js '<json>'
-// JSON format: {"uuid":"...","language":"en","timestamps":true,"aiCleanup":false,"aiPrompt":"...","save":false,"database":"...","groupPath":"...","docName":"..."}
+// JSON format: {"uuid":"...","language":"en","timestamps":true,"aiCleanup":false,"aiPrompt":"...","save":false,"database":"...","groupPath":"...","docName":"...","updateRecord":false}
 // Required: uuid
 // Optional: language (ISO code like 'en', 'de'), timestamps (boolean), aiCleanup (boolean), aiPrompt (string)
 // Save options: save (boolean), database (name/UUID), groupPath (path/UUID), docName (string)
+// Update options: updateRecord (boolean) - saves transcription to original record's plain text (makes it searchable)
 //
 // Supported record types: audio, video with audio track, PDF, image
 //
@@ -14,6 +15,7 @@
 //   osascript -l JavaScript transcribe.js '{"uuid":"ABC123","language":"de","timestamps":true}'
 //   osascript -l JavaScript transcribe.js '{"uuid":"ABC123","aiCleanup":true}'
 //   osascript -l JavaScript transcribe.js '{"uuid":"ABC123","aiCleanup":true,"aiPrompt":"Format as bullet points"}'
+//   osascript -l JavaScript transcribe.js '{"uuid":"ABC123","updateRecord":true}'
 
 ObjC.import("Foundation");
 
@@ -87,7 +89,7 @@ if (!jsonArg) {
 } else {
   try {
     const params = JSON.parse(jsonArg);
-    const { uuid: rawUuid, language, timestamps, aiCleanup, aiPrompt, includeRaw, save, database, groupPath, docName, tags } = params;
+    const { uuid: rawUuid, language, timestamps, aiCleanup, aiPrompt, includeRaw, save, database, groupPath, docName, tags, updateRecord } = params;
 
     if (!rawUuid) throw new Error("Missing required field: uuid");
 
@@ -212,6 +214,16 @@ if (!jsonArg) {
           name: savedRecord.name(),
           location: savedRecord.location(),
           database: targetDb.name()
+        };
+      }
+
+      // Optionally update the original record's plain text (makes it searchable)
+      if (updateRecord === true) {
+        record.plainText = finalTranscription;
+        result.updatedRecord = {
+          uuid: uuid,
+          name: record.name(),
+          plainTextUpdated: true
         };
       }
 

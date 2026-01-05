@@ -179,11 +179,11 @@ JXA and AppleScript syntax can be picky. When uncertain about method names, para
 
 ```bash
 # Search for a specific command or property
-sdef /Applications/DEVONthink\ 4.app 2>/dev/null | grep -A 20 "transcribe"
-sdef /Applications/DEVONthink\ 4.app 2>/dev/null | grep -A 20 "import"
+sdef /Applications/DEVONthink.app 2>/dev/null | grep -A 20 "transcribe"
+sdef /Applications/DEVONthink.app 2>/dev/null | grep -A 20 "import"
 
 # View full dictionary
-sdef /Applications/DEVONthink\ 4.app 2>/dev/null | less
+sdef /Applications/DEVONthink.app 2>/dev/null | less
 ```
 
 The sdef output shows AppleScript syntax. Remember to translate to JXA conventions (camelCase method names, object parameters instead of labeled arguments).

@@ -28,6 +28,7 @@ export function registerTranscribeCommand(program) {
     .option('-g, --group <path>', 'Destination group path or UUID (default: source record\'s location)')
     .option('-n, --name <name>', 'Document name (default: "Original Name - Transcription")')
     .option('-t, --tag <tag>', 'Add tag to saved document (repeatable)', collectTags, [])
+    .option('-u, --update-record', 'Save transcription to the original record\'s plain text (makes it searchable)')
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output the transcription text')
@@ -53,6 +54,11 @@ export function registerTranscribeCommand(program) {
           if (options.group) params.groupPath = options.group;
           if (options.name) params.docName = options.name;
           if (options.tag && options.tag.length > 0) params.tags = options.tag;
+        }
+
+        // Update original record option
+        if (options.updateRecord) {
+          params.updateRecord = true;
         }
 
         const result = await runJxa('read', 'transcribe', [JSON.stringify(params)]);
