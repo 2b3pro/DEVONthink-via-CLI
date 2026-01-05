@@ -36,7 +36,8 @@ function isUuid(str) {
 // Extract UUID from x-devonthink-item:// URL or return raw UUID
 function extractUuid(str) {
   if (!str) return null;
-  const urlMatch = str.match(/^x-devonthink-item:\/\/([A-F0-9-]+)$/i);
+  // Match x-devonthink-item:// followed by UUID, optionally followed by query params
+  const urlMatch = str.match(/^x-devonthink-item:\/\/([A-F0-9-]+)(?:\?.*)?$/i);
   if (urlMatch) return urlMatch[1];
   if (isUuid(str)) return str;
   return str;
@@ -73,12 +74,33 @@ if (!jsonArg) {
 } else {
   try {
     const params = JSON.parse(jsonArg);
-    const { prompt, records, url, engine, model, temperature, role, mode, usage, format, thinking, toolCalls } = params;
-
-    if (!prompt) throw new Error("Missing required field: prompt");
+    let { prompt, promptRecord, records, url, engine, model, temperature, role, mode, usage, format, thinking, toolCalls } = params;
 
     const app = Application("DEVONthink");
     const options = {};
+
+    // If promptRecord is provided, read the prompt from that record
+    if (promptRecord) {
+      const uuid = extractUuid(promptRecord);
+      const record = app.getRecordWithUuid(uuid);
+      if (!record) {
+        throw new Error("Prompt record not found: " + uuid);
+      }
+      const recordText = record.plainText();
+      if (!recordText) {
+        throw new Error("Prompt record has no text content: " + uuid);
+      }
+      // If both prompt and promptRecord are provided, append record text to prompt?
+      // Or just use record text if prompt is empty?
+      // Logic: If prompt is provided, append record text. If not, use record text.
+      if (prompt) {
+        prompt = prompt + "\n\n" + recordText;
+      } else {
+        prompt = recordText;
+      }
+    }
+
+    if (!prompt) throw new Error("Missing required field: prompt");
 
     // Handle records array - convert UUIDs to record objects
     if (records && Array.isArray(records) && records.length > 0) {

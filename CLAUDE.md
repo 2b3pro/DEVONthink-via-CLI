@@ -67,6 +67,7 @@ export function registerExampleCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON')
     .option('-q, --quiet', 'Minimal output')
+    .option('-P, --prompt-record <uuid>', 'UUID of a record to use as a prompt')
     .action(async (arg, options) => {
       try {
         await requireDevonthink();

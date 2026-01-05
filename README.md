@@ -322,6 +322,12 @@ dt chat "What is the capital of France?"
 # With document context
 dt chat "Summarize this document" -r <uuid>
 
+# Use record content as the prompt
+dt chat -P <uuid>
+
+# Combine prompt text with record content (text prepended to record)
+dt chat "Summarize this document:" -P <uuid>
+
 # Multiple documents for context
 dt chat "Compare these documents" -r <uuid1> -r <uuid2>
 
@@ -356,6 +362,7 @@ dt chat capabilities -e claude -m "claude-3-opus"
 
 **Options:**
 - `-r, --record <uuid>` - Document(s) for context (repeatable)
+- `-P, --prompt-record <uuid>` - Use record content as prompt
 - `-U, --url <url>` - Web page/image/PDF URL for context
 - `-e, --engine <engine>` - Chat engine
 - `-m, --model <model>` - Specific model name

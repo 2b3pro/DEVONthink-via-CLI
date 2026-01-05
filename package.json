@@ -1,6 +1,6 @@
 {
   "name": "devonthink-cli",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "Command-line interface for DEVONthink 4 on macOS",
   "type": "module",
   "main": "src/index.js",

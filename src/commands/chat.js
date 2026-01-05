@@ -23,6 +23,7 @@ export function registerChatCommand(program) {
     .command('ask [prompt]', { isDefault: true })
     .description('Send a chat message')
     .option('-r, --record <uuid>', 'Document(s) for context (repeatable, or - for stdin)', collectRecords, [])
+    .option('-P, --prompt-record <uuid>', 'Use record content as prompt')
     .option('-U, --url <url>', 'Web page/image/PDF URL for context')
     .option('-e, --engine <engine>', 'Chat engine (chatgpt, claude, gemini, ollama, etc.)')
     .option('-m, --model <model>', 'Specific model name')
@@ -60,7 +61,7 @@ export function registerChatCommand(program) {
           if (records.length === 0) {
             throw new Error('No UUIDs received from stdin');
           }
-        } else if (!prompt && !process.stdin.isTTY) {
+        } else if (!prompt && !options.promptRecord && !process.stdin.isTTY) {
           // No prompt provided and stdin is piped - read prompt from stdin
           finalPrompt = await readStdin();
           if (!finalPrompt) {
@@ -68,14 +69,17 @@ export function registerChatCommand(program) {
           }
         }
 
-        // Validate we have a prompt
-        if (!finalPrompt) {
+        // Validate we have a prompt or a prompt record
+        if (!finalPrompt && !options.promptRecord) {
           throw new Error('No prompt provided. Usage: dt chat "your prompt" or echo "prompt" | dt chat');
         }
 
         // Build params object
         const params = { prompt: finalPrompt };
 
+        if (options.promptRecord) {
+          params.promptRecord = options.promptRecord;
+        }
         if (records.length > 0) {
           params.records = records;
         }
