@@ -10,6 +10,23 @@
 
 ObjC.import("Foundation");
 
+// Detect if string looks like a UUID or x-devonthink-item:// URL
+function isUuid(str) {
+  if (!str || typeof str !== "string") return false;
+  if (str.startsWith("x-devonthink-item://")) return true;
+  if (str.includes("/")) return false;
+  return /^[A-F0-9-]{8,}$/i.test(str) && str.includes("-");
+}
+
+// Extract UUID from x-devonthink-item:// URL or return raw UUID
+function extractUuid(str) {
+  if (!str) return null;
+  const urlMatch = str.match(/^x-devonthink-item:\/\/([A-F0-9-]+)$/i);
+  if (urlMatch) return urlMatch[1];
+  if (isUuid(str)) return str;
+  return str; // Return as-is, let DEVONthink handle validation
+}
+
 function getArg(index, defaultValue) {
   const args = $.NSProcessInfo.processInfo.arguments;
   if (args.count <= index) return defaultValue;
@@ -28,7 +45,7 @@ if (!uuid) {
 } else {
   try {
     const app = Application("DEVONthink");
-    const record = app.getRecordWithUuid(uuid);
+    const record = app.getRecordWithUuid(extractUuid(uuid));
 
     if (!record) throw new Error("Record not found: " + uuid);
 

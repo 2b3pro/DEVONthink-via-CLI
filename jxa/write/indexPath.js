@@ -23,16 +23,27 @@ function getArg(index, defaultValue) {
   return arg && arg.length > 0 ? arg : defaultValue;
 }
 
-// Detect if string looks like a UUID
+// Detect if string looks like a UUID or x-devonthink-item:// URL
 function isUuid(str) {
-  if (!str || typeof str !== "string" || str.includes("/")) return false;
+  if (!str || typeof str !== "string") return false;
+  if (str.startsWith("x-devonthink-item://")) return true;
+  if (str.includes("/")) return false;
   return /^[A-F0-9-]{8,}$/i.test(str) && str.includes("-");
+}
+
+// Extract UUID from x-devonthink-item:// URL or return raw UUID
+function extractUuid(str) {
+  if (!str) return null;
+  const urlMatch = str.match(/^x-devonthink-item:\/\/([A-F0-9-]+)$/i);
+  if (urlMatch) return urlMatch[1];
+  if (isUuid(str)) return str;
+  return str; // Return as-is, let DEVONthink handle validation
 }
 
 // Helper to find database by name or UUID
 function getDatabase(app, ref) {
   // Try UUID first
-  const byUuid = app.getRecordWithUuid(ref);
+  const byUuid = app.getRecordWithUuid(extractUuid(ref));
   if (byUuid) {
     return byUuid.database();
   }
@@ -53,8 +64,8 @@ function resolveGroup(app, db, pathOrUuid, createIfMissing) {
   }
 
   // Try UUID first
-  if (pathOrUuid.includes("-") && !pathOrUuid.includes("/")) {
-    const byUuid = app.getRecordWithUuid(pathOrUuid);
+  if (isUuid(pathOrUuid)) {
+    const byUuid = app.getRecordWithUuid(extractUuid(pathOrUuid));
     if (byUuid) return byUuid;
   }
 
@@ -115,7 +126,7 @@ if (!jsonArg) {
 
     if (groupPath && isUuid(groupPath)) {
       // Group UUID provided - get database from the group itself
-      destination = app.getRecordWithUuid(groupPath);
+      destination = app.getRecordWithUuid(extractUuid(groupPath));
       if (!destination) throw new Error("Group not found with UUID: " + groupPath);
       const groupType = destination.recordType();
       if (groupType !== "group" && groupType !== "smart group") {

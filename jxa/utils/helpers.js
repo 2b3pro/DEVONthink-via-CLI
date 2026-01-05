@@ -2,11 +2,31 @@
 // Include these at the top of any script that needs record lookup
 
 /**
- * Detect if a string looks like a DEVONthink UUID
+ * Extract UUID from x-devonthink-item:// URL or return raw UUID
+ * @param {string} str - String that may be a UUID or x-devonthink-item:// URL
+ * @returns {string|null} - Extracted UUID or null if invalid
+ */
+function extractUuid(str) {
+  if (!str) return null;
+  // Check for x-devonthink-item:// URL
+  const urlMatch = str.match(/^x-devonthink-item:\/\/([A-F0-9-]+)$/i);
+  if (urlMatch) return urlMatch[1];
+  // Return as-is if it looks like a UUID
+  if (!str.includes("/") && /^[A-F0-9-]{8,}$/i.test(str) && str.includes("-")) {
+    return str;
+  }
+  return str; // Return as-is, let DEVONthink handle validation
+}
+
+/**
+ * Detect if a string looks like a DEVONthink UUID or item URL
  * UUIDs are alphanumeric with hyphens, no slashes
  */
 function isUuid(str) {
-  if (!str || typeof str !== "string" || str.includes("/")) return false;
+  if (!str || typeof str !== "string") return false;
+  // Handle x-devonthink-item:// URLs
+  if (str.startsWith("x-devonthink-item://")) return true;
+  if (str.includes("/")) return false;
   // DEVONthink UUIDs: alphanumeric with hyphens
   return /^[A-F0-9-]{8,}$/i.test(str) && str.includes("-");
 }
@@ -14,7 +34,9 @@ function isUuid(str) {
 function lookupByUuid(theApp, uuid) {
   if (!uuid) return null;
   try {
-    return theApp.getRecordWithUuid(uuid);
+    // Extract UUID from x-devonthink-item:// URL if present
+    const cleanUuid = extractUuid(uuid);
+    return theApp.getRecordWithUuid(cleanUuid);
   } catch (e) {
     return null;
   }

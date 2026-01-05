@@ -26,6 +26,23 @@ function getArg(index, defaultValue) {
   return arg && arg.length > 0 ? arg : defaultValue;
 }
 
+// Detect if string looks like a UUID or DEVONthink URL
+function isUuid(str) {
+  if (!str || typeof str !== "string") return false;
+  if (str.startsWith("x-devonthink-item://")) return true;
+  if (str.includes("/")) return false;
+  return /^[A-F0-9-]{8,}$/i.test(str) && str.includes("-");
+}
+
+// Extract UUID from x-devonthink-item:// URL or return raw UUID
+function extractUuid(str) {
+  if (!str) return null;
+  const urlMatch = str.match(/^x-devonthink-item:\/\/([A-F0-9-]+)$/i);
+  if (urlMatch) return urlMatch[1];
+  if (isUuid(str)) return str;
+  return str; // Return as-is, let DEVONthink handle validation
+}
+
 // Navigate to a group by path, optionally creating missing folders
 function getOrCreateGroup(app, database, path, createMissing) {
   const db = app.databases().find(d => d.name() === database);
@@ -84,7 +101,7 @@ if (!jsonArg) {
         if (!database) throw new Error("Missing required field: database");
         if (!groupPath) throw new Error("Missing required field: groupPath");
 
-        const record = app.getRecordWithUuid(uuid);
+        const record = app.getRecordWithUuid(extractUuid(uuid));
         if (!record) throw new Error("Record not found: " + uuid);
 
         const operations = [];

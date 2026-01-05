@@ -9,6 +9,23 @@
 
 ObjC.import("Foundation");
 
+// Detect if string looks like a UUID or x-devonthink-item:// URL
+function isUuid(str) {
+  if (!str || typeof str !== "string") return false;
+  if (str.startsWith("x-devonthink-item://")) return true;
+  if (str.includes("/")) return false;
+  return /^[A-F0-9-]{8,}$/i.test(str) && str.includes("-");
+}
+
+// Extract UUID from x-devonthink-item:// URL or return raw UUID
+function extractUuid(str) {
+  if (!str) return null;
+  const urlMatch = str.match(/^x-devonthink-item:\/\/([A-F0-9-]+)$/i);
+  if (urlMatch) return urlMatch[1];
+  if (isUuid(str)) return str;
+  return str; // Return as-is, let DEVONthink handle validation
+}
+
 function getArg(index, defaultValue) {
   const args = $.NSProcessInfo.processInfo.arguments;
   if (args.count <= index) return defaultValue;
@@ -29,12 +46,12 @@ if (!arg1) {
     const app = Application("DEVONthink");
     let group = null;
 
-    // If only one arg and it looks like a UUID (contains hyphens and is long enough)
-    const looksLikeUuid = arg1.includes("-") && arg1.length > 20;
+    // If only one arg and it looks like a UUID or x-devonthink-item:// URL
+    const looksLikeUuid = isUuid(arg1);
 
     if (looksLikeUuid && !arg2) {
       // Treat as UUID
-      group = app.getRecordWithUuid(arg1);
+      group = app.getRecordWithUuid(extractUuid(arg1));
       if (!group) throw new Error("Group not found with UUID: " + arg1);
     } else {
       // Treat as database + path

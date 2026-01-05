@@ -19,17 +19,28 @@ function getArg(index, defaultValue) {
   return arg && arg.length > 0 ? arg : defaultValue;
 }
 
-// Detect if string looks like a UUID
+// Detect if string looks like a UUID or x-devonthink-item:// URL
 function isUuid(str) {
-  if (!str || typeof str !== "string" || str.includes("/")) return false;
+  if (!str || typeof str !== "string") return false;
+  if (str.startsWith("x-devonthink-item://")) return true;
+  if (str.includes("/")) return false;
   return /^[A-F0-9-]{8,}$/i.test(str) && str.includes("-");
+}
+
+// Extract UUID from x-devonthink-item:// URL or return raw UUID
+function extractUuid(str) {
+  if (!str) return null;
+  const urlMatch = str.match(/^x-devonthink-item:\/\/([A-F0-9-]+)$/i);
+  if (urlMatch) return urlMatch[1];
+  if (isUuid(str)) return str;
+  return str; // Return as-is, let DEVONthink handle validation
 }
 
 // Resolve database by name or UUID
 function getDatabase(theApp, ref) {
   if (!ref) return null;
   if (isUuid(ref)) {
-    const record = theApp.getRecordWithUuid(ref);
+    const record = theApp.getRecordWithUuid(extractUuid(ref));
     if (record) return record.database();
     throw new Error("Database not found with UUID: " + ref);
   }
@@ -43,7 +54,7 @@ function getDatabase(theApp, ref) {
 function resolveGroup(theApp, ref, database) {
   if (!ref || ref === "/") return database.root();
   if (isUuid(ref)) {
-    const group = theApp.getRecordWithUuid(ref);
+    const group = theApp.getRecordWithUuid(extractUuid(ref));
     if (!group) throw new Error("Group not found with UUID: " + ref);
     return group;
   }
@@ -80,7 +91,7 @@ if (!jsonArg) {
     // Resolve destination group
     let destGroup;
     if (isUuid(to)) {
-      destGroup = app.getRecordWithUuid(to);
+      destGroup = app.getRecordWithUuid(extractUuid(to));
       if (!destGroup) throw new Error("Destination group not found: " + to);
     } else if (databaseRef) {
       // Path-based destination requires database reference
@@ -99,7 +110,7 @@ if (!jsonArg) {
     let sourceGroup = null;
     if (fromGroup) {
       if (isUuid(fromGroup)) {
-        sourceGroup = app.getRecordWithUuid(fromGroup);
+        sourceGroup = app.getRecordWithUuid(extractUuid(fromGroup));
         if (!sourceGroup) throw new Error("Source group not found: " + fromGroup);
       } else {
         throw new Error("Source group must be specified by UUID");
@@ -110,7 +121,7 @@ if (!jsonArg) {
     const errors = [];
 
     for (const uuid of records) {
-      const record = app.getRecordWithUuid(uuid);
+      const record = app.getRecordWithUuid(extractUuid(uuid));
       if (!record) {
         errors.push({ uuid: uuid, error: "Record not found" });
         continue;

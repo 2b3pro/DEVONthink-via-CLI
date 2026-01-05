@@ -130,9 +130,8 @@ if (!jsonArg) {
         const prompt = aiPrompt || "Clean up this transcription. Fix grammar, punctuation, and formatting while preserving the original meaning. Remove filler words and false starts.";
         const fullPrompt = prompt + "\n\n" + transcription;
 
-        // Use DEVONthink's AI chat: get chat response for <message> [record <record>]
-        // In JXA, "for" is the direct parameter, additional params are named
-        aiResponse = app.getChatResponseFor(fullPrompt, { record: record });
+        // Use DEVONthink's AI chat: getChatResponseForMessage(prompt, {record: record})
+        aiResponse = app.getChatResponseForMessage(fullPrompt, { record: record });
 
         if (aiResponse && aiResponse.length > 0) {
           finalTranscription = aiResponse;

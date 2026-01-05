@@ -16,6 +16,23 @@
 
 ObjC.import("Foundation");
 
+// Detect if string looks like a UUID or x-devonthink-item:// URL
+function isUuid(str) {
+  if (!str || typeof str !== "string") return false;
+  if (str.startsWith("x-devonthink-item://")) return true;
+  if (str.includes("/")) return false;
+  return /^[A-F0-9-]{8,}$/i.test(str) && str.includes("-");
+}
+
+// Extract UUID from x-devonthink-item:// URL or return raw UUID
+function extractUuid(str) {
+  if (!str) return null;
+  const urlMatch = str.match(/^x-devonthink-item:\/\/([A-F0-9-]+)$/i);
+  if (urlMatch) return urlMatch[1];
+  if (isUuid(str)) return str;
+  return str; // Return as-is, let DEVONthink handle validation
+}
+
 function getArg(index, defaultValue) {
   const args = $.NSProcessInfo.processInfo.arguments;
   if (args.count <= index) return defaultValue;
@@ -26,7 +43,7 @@ function getArg(index, defaultValue) {
 // Helper to find database by name or UUID
 function getDatabase(app, ref) {
   // Try UUID first
-  const byUuid = app.getRecordWithUuid(ref);
+  const byUuid = app.getRecordWithUuid(extractUuid(ref));
   if (byUuid) {
     return byUuid.database();
   }
@@ -47,8 +64,8 @@ function resolveGroup(app, db, pathOrUuid, createIfMissing) {
   }
 
   // Try UUID first
-  if (pathOrUuid.includes("-") && !pathOrUuid.includes("/")) {
-    const byUuid = app.getRecordWithUuid(pathOrUuid);
+  if (isUuid(pathOrUuid)) {
+    const byUuid = app.getRecordWithUuid(extractUuid(pathOrUuid));
     if (byUuid) return byUuid;
   }
 
@@ -98,7 +115,7 @@ if (!jsonArg) {
     // Get all records
     const records = [];
     for (const uuid of uuids) {
-      const record = app.getRecordWithUuid(uuid);
+      const record = app.getRecordWithUuid(extractUuid(uuid));
       if (!record) throw new Error("Record not found: " + uuid);
       records.push(record);
     }

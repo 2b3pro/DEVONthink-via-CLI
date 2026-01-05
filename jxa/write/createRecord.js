@@ -20,17 +20,28 @@ function getArg(index, defaultValue) {
   return arg && arg.length > 0 ? arg : defaultValue;
 }
 
-// Detect if string looks like a UUID (alphanumeric with hyphens, no slashes)
+// Detect if string looks like a UUID or DEVONthink URL (alphanumeric with hyphens, no slashes)
 function isUuid(str) {
-  if (!str || typeof str !== "string" || str.includes("/")) return false;
+  if (!str || typeof str !== "string") return false;
+  if (str.startsWith("x-devonthink-item://")) return true;
+  if (str.includes("/")) return false;
   return /^[A-F0-9-]{8,}$/i.test(str) && str.includes("-");
+}
+
+// Extract UUID from x-devonthink-item:// URL or return raw UUID
+function extractUuid(str) {
+  if (!str) return null;
+  const urlMatch = str.match(/^x-devonthink-item:\/\/([A-F0-9-]+)$/i);
+  if (urlMatch) return urlMatch[1];
+  if (isUuid(str)) return str;
+  return str; // Return as-is, let DEVONthink handle validation
 }
 
 // Resolve database by name or UUID
 function getDatabase(theApp, ref) {
   if (!ref) return theApp.currentDatabase();
   if (isUuid(ref)) {
-    const record = theApp.getRecordWithUuid(ref);
+    const record = theApp.getRecordWithUuid(extractUuid(ref));
     if (record) return record.database();
     throw new Error("Database not found with UUID: " + ref);
   }
@@ -44,7 +55,7 @@ function getDatabase(theApp, ref) {
 function resolveGroup(theApp, ref, database) {
   if (!ref || ref === "/") return database.root();
   if (isUuid(ref)) {
-    const group = theApp.getRecordWithUuid(ref);
+    const group = theApp.getRecordWithUuid(extractUuid(ref));
     if (!group) throw new Error("Group not found with UUID: " + ref);
     const type = group.recordType();
     if (type !== "group" && type !== "smart group") {
@@ -87,7 +98,7 @@ if (!jsonArg) {
 
     if (groupPath && isUuid(groupPath)) {
       // Group UUID provided - get database from the group itself
-      destination = app.getRecordWithUuid(groupPath);
+      destination = app.getRecordWithUuid(extractUuid(groupPath));
       if (!destination) throw new Error("Group not found with UUID: " + groupPath);
       const groupType = destination.recordType();
       if (groupType !== "group" && groupType !== "smart group") {
