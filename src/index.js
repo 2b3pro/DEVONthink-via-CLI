@@ -28,6 +28,7 @@ import { registerIndexCommand } from './commands/index.js';
 import { registerMergeCommand } from './commands/merge.js';
 import { registerTranscribeCommand } from './commands/transcribe.js';
 import { registerChatCommand } from './commands/chat.js';
+import { registerLinkCommand } from './commands/link.js';
 
 const VERSION = '1.6.0';
 
@@ -68,6 +69,7 @@ export function createProgram() {
   registerMergeCommand(program);
   registerTranscribeCommand(program);
   registerChatCommand(program);
+  registerLinkCommand(program);
 
   // Add completion command
   program
@@ -86,12 +88,12 @@ export function createProgram() {
 function generateCompletion(shell) {
   const commands = [
     'search', 'get', 'list', 'create', 'import', 'index', 'export', 'modify', 'update', 'delete',
-    'replicate', 'duplicate', 'move', 'merge', 'classify', 'group', 'reveal', 'batch', 'status', 'download', 'reading-list', 'convert', 'deconsolidate', 'transcribe', 'chat', 'completion'
+    'replicate', 'duplicate', 'move', 'merge', 'classify', 'group', 'reveal', 'batch', 'status', 'download', 'reading-list', 'convert', 'deconsolidate', 'transcribe', 'chat', 'link', 'unlink', 'completion'
   ];
 
   const subcommands = {
     search: ['query', 'comment', 'hash', 'file', 'path', 'tags', 'url', 'show'],
-    get: ['props', 'preview', 'selection', 'concordance', 'transcribe'],
+    get: ['props', 'preview', 'selection', 'concordance', 'transcribe', 'related'],
     list: ['group', 'inbox', 'tag'],
     create: ['record', 'markdown', 'pdf', 'web', 'image'],
     classify: ['suggest', 'batch'],
@@ -123,7 +125,7 @@ _dt_completions() {
             return 0
             ;;
         get)
-            COMPREPLY=( $(compgen -W "props preview selection concordance transcribe" -- \${cur}) )
+            COMPREPLY=( $(compgen -W "props preview selection concordance transcribe related" -- ${cur}) )
             return 0
             ;;
         list|ls)
@@ -151,7 +153,15 @@ _dt_completions() {
             return 0
             ;;
         chat)
-            COMPREPLY=( $(compgen -W "ask models capabilities" -- \${cur}) )
+            COMPREPLY=( $(compgen -W "ask models capabilities" -- ${cur}) )
+            return 0
+            ;;
+        link|ln)
+            # No subcommands, just arguments
+            return 0
+            ;;
+        unlink)
+            # No subcommands
             return 0
             ;;
         completion)
@@ -202,6 +212,8 @@ _dt() {
         'convert:Convert record to another format'
         'deconsolidate:Move record to external folder'
         'chat:AI chat with DEVONthink'
+        'link:Link records or enable linking'
+        'unlink:Unlink records or disable linking'
         'completion:Generate shell completion script'
     )
 
@@ -224,6 +236,7 @@ _dt() {
         'selection:Get selected records'
         'concordance:Get word list (concordance)'
         'transcribe:Transcribe speech/text from media'
+        'related:Get related records (backlinks, wikilinks, AI)'
     )
 
     list_commands=(
@@ -344,6 +357,8 @@ complete -c dt -f -n "__fish_use_subcommand" -a "reading-list" -d "Reading list 
 complete -c dt -f -n "__fish_use_subcommand" -a "convert" -d "Convert record to another format"
 complete -c dt -f -n "__fish_use_subcommand" -a "deconsolidate" -d "Move record to external folder"
 complete -c dt -f -n "__fish_use_subcommand" -a "chat" -d "AI chat with DEVONthink"
+complete -c dt -f -n "__fish_use_subcommand" -a "link" -d "Link records or enable linking"
+complete -c dt -f -n "__fish_use_subcommand" -a "unlink" -d "Unlink records or disable linking"
 complete -c dt -f -n "__fish_use_subcommand" -a "completion" -d "Generate shell completion"
 
 # search subcommands
@@ -362,6 +377,7 @@ complete -c dt -f -n "__fish_seen_subcommand_from get" -a "preview" -d "Get plai
 complete -c dt -f -n "__fish_seen_subcommand_from get" -a "selection" -d "Get selected records"
 complete -c dt -f -n "__fish_seen_subcommand_from get" -a "concordance" -d "Get word list (concordance)"
 complete -c dt -f -n "__fish_seen_subcommand_from get" -a "transcribe" -d "Transcribe speech/text from media"
+complete -c dt -f -n "__fish_seen_subcommand_from get" -a "related" -d "Get related records"
 
 # list subcommands
 complete -c dt -f -n "__fish_seen_subcommand_from list ls" -a "group" -d "List group contents"

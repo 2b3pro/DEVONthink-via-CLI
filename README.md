@@ -293,6 +293,29 @@ dt merge <uuid1> <uuid2> <uuid3>
 dt merge <uuid1> <uuid2> --to "/Merged" --database "Archive"
 ```
 
+### Linking & Relations
+
+```bash
+# Explore relationships (Backlinks, Outgoing links, and AI "See Also")
+dt get related <uuid>
+
+# Filter relations by type
+dt get related <uuid> --type incoming  # Backlinks only
+dt get related <uuid> --type similar   # AI suggestions only
+
+# Manually link two records (appends markdown link to source)
+dt link <source-uuid> <target-uuid>
+
+# Enable magic linking features for a record
+dt link <uuid> --wiki --see-also
+
+# Disable magic linking features
+dt unlink <uuid> --wiki --see-also
+
+# Configure specific visibility flags
+dt link <uuid> --no-search --no-chat  # Hide from search and AI
+```
+
 ### Delete Records
 
 ```bash

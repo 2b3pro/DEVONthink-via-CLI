@@ -230,4 +230,38 @@ export function registerGetCommand(program) {
         process.exit(1);
       }
     });
+
+  // dt get related <uuid>
+  get
+    .command('related <uuid>')
+    .alias('links')
+    .description('Get related records (backlinks, wikilinks, AI suggestions)')
+    .option('-t, --type <type>', 'Type of relation: incoming, outgoing, similar, all', 'all')
+    .option('-l, --limit <n>', 'Limit number of results', parseInt, 20)
+    .option('--json', 'Output raw JSON')
+    .option('--pretty', 'Pretty print JSON output')
+    .option('-q, --quiet', 'Only output UUIDs')
+    .action(async (uuid, options) => {
+      try {
+        await requireDevonthink();
+        const params = {
+          uuid,
+          type: options.type,
+          limit: options.limit
+        };
+        
+        const result = await runJxa('read', 'getRelated', [JSON.stringify(params)]);
+
+        if (options.quiet && result.success) {
+          console.log(result.relations.map(r => r.uuid).join('\n'));
+        } else {
+          print(result, options);
+        }
+
+        if (!result.success) process.exit(1);
+      } catch (error) {
+        printError(error, options);
+        process.exit(1);
+      }
+    });
 }
