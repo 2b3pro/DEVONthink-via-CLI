@@ -33,6 +33,11 @@ export function registerImportCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUID of imported record')
+    .addHelpText('after', `
+Examples:
+  dt import "/path/to/file.pdf" -d "Research" -g "/Papers"
+  dt import "/path/to/audio.m4a" -d "Inbox" --transcribe --language en
+`)
     .action(async (file, options) => {
       try {
         await requireDevonthink();

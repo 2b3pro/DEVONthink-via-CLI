@@ -25,6 +25,11 @@ export function registerListCommand(program) {
     .option('--refresh', 'Force refresh from DEVONthink')
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
+    .addHelpText('after', `
+Examples:
+  dt list databases
+  dt list dbs --refresh
+`)
     .action(async (options) => {
       try {
         await requireDevonthink();
@@ -67,6 +72,11 @@ export function registerListCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUIDs')
+    .addHelpText('after', `
+Examples:
+  dt list group "Research" "/Papers/2024"
+  dt list group ABCD-1234 --quiet
+`)
     .action(async (target, path, options) => {
       try {
         await requireDevonthink();
@@ -109,6 +119,11 @@ export function registerListCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUIDs')
+    .addHelpText('after', `
+Examples:
+  dt list inbox
+  dt list inbox -l 10 --preview 200
+`)
     .action(async (options) => {
       try {
         await requireDevonthink();
@@ -138,6 +153,11 @@ export function registerListCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUIDs')
+    .addHelpText('after', `
+Examples:
+  dt list tag "inbox"
+  dt list tag "research" -d "Research" -l 25
+`)
     .action(async (tag, options) => {
       try {
         await requireDevonthink();

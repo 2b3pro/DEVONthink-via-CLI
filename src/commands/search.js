@@ -49,6 +49,13 @@ export function registerSearchCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUIDs')
+    .addHelpText('after', `
+Examples:
+  dt search q "project plan"
+  dt search q "machine learning" -d "Research"
+  dt search q "client" --created-after "2 weeks" --modified-before "2024-12-31"
+  dt search q "tags:urgent AND kind:pdf" --type pdf
+`)
     .action(async (query, options) => {
       try {
         await requireDevonthink();
@@ -93,6 +100,11 @@ export function registerSearchCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUIDs')
+    .addHelpText('after', `
+Examples:
+  dt search comment "client notes"
+  dt search comment "needs follow up" -d "Research"
+`)
     .action(async (text, options) => {
       try {
         await requireDevonthink();
@@ -120,6 +132,11 @@ export function registerSearchCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUIDs')
+    .addHelpText('after', `
+Examples:
+  dt search hash "0cc175b9c0f1b6a831c399e269772661"
+  dt search hash "deadbeef" -d "Research"
+`)
     .action(async (hash, options) => {
       try {
         await requireDevonthink();
@@ -147,6 +164,11 @@ export function registerSearchCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUIDs')
+    .addHelpText('after', `
+Examples:
+  dt search file "Invoice-2024.pdf"
+  dt search file "Meeting Notes" -d "Work"
+`)
     .action(async (filename, options) => {
       try {
         await requireDevonthink();
@@ -174,6 +196,11 @@ export function registerSearchCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUIDs')
+    .addHelpText('after', `
+Examples:
+  dt search path "/Projects/Client A/Contracts"
+  dt search path "Research/Papers/2024" -d "Research"
+`)
     .action(async (path, options) => {
       try {
         await requireDevonthink();
@@ -202,6 +229,11 @@ export function registerSearchCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUIDs')
+    .addHelpText('after', `
+Examples:
+  dt search tags urgent client
+  dt search tags "to-review" "2024" --any -d "Research"
+`)
     .action(async (tags, options) => {
       try {
         await requireDevonthink();
@@ -230,6 +262,11 @@ export function registerSearchCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUIDs')
+    .addHelpText('after', `
+Examples:
+  dt search url "https://example.com/article"
+  dt search url "https://example.com" -d "Research"
+`)
     .action(async (url, options) => {
       try {
         await requireDevonthink();
@@ -256,6 +293,11 @@ export function registerSearchCommand(program) {
     .description('Open search in DEVONthink window')
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
+    .addHelpText('after', `
+Examples:
+  dt search show "project plan"
+  dt search ui "tags:urgent AND kind:pdf"
+`)
     .action(async (query, options) => {
       try {
         await requireDevonthink();

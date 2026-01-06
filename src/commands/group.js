@@ -17,6 +17,11 @@ export function registerGroupCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output group UUID')
+    .addHelpText('after', `
+Examples:
+  dt group "/Projects/Client A" -d "Research"
+  dt mkdir "Archive/2024" -d "Research"
+`)
     .action(async (path, options) => {
       try {
         await requireDevonthink();

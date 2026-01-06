@@ -25,6 +25,11 @@ export function registerOrganizeCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Minimal output')
+    .addHelpText('after', `
+Examples:
+  dt organize ABCD-1234 --auto
+  printf "UUID1\\nUUID2\\n" | dt tidy - --tag --summarize
+`)
     .action(async (uuids, options) => {
       try {
         // Handle stdin

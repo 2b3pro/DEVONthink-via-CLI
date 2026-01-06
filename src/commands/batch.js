@@ -23,6 +23,11 @@ export function registerBatchCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Minimal output')
+    .addHelpText('after', `
+Examples:
+  dt batch preview -u UUID1 UUID2 -l 500
+  printf "UUID1\\nUUID2\\n" | dt batch preview -u -
+`)
     .action(async (options) => {
       try {
         await requireDevonthink();
@@ -59,6 +64,11 @@ export function registerBatchCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Minimal output')
+    .addHelpText('after', `
+Examples:
+  dt batch verify -u UUID1 UUID2
+  printf "UUID1\\nUUID2\\n" | dt batch verify -u -
+`)
     .action(async (options) => {
       try {
         await requireDevonthink();

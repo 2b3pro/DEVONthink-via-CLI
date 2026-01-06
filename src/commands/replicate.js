@@ -17,6 +17,11 @@ export function registerReplicateCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output replicant UUIDs')
+    .addHelpText('after', `
+Examples:
+  dt replicate ABCD-1234 --to UUID-GROUP-1 UUID-GROUP-2
+  dt rep ABCD-1234 --to UUID-GROUP-1
+`)
     .action(async (uuid, options) => {
       try {
         await requireDevonthink();

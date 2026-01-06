@@ -37,6 +37,11 @@ export function registerChatCommand(program) {
     .option('--json', 'Output raw JSON wrapper')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output response text')
+    .addHelpText('after', `
+Examples:
+  dt chat ask "Summarize this"
+  dt chat ask "Summarize" -r ABCD-1234
+`)
     .action(async (prompt, options) => {
       try {
         await requireDevonthink();
@@ -123,6 +128,11 @@ export function registerChatCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output model names (one per line)')
+    .addHelpText('after', `
+Examples:
+  dt chat models
+  dt chat models -e gemini
+`)
     .action(async (options) => {
       try {
         await requireDevonthink();
@@ -154,6 +164,11 @@ export function registerChatCommand(program) {
     .requiredOption('-m, --model <model>', 'Model name')
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
+    .addHelpText('after', `
+Examples:
+  dt chat capabilities -e gemini -m gemini-flash
+  dt chat caps -e claude -m claude-3-5-sonnet
+`)
     .action(async (options) => {
       try {
         await requireDevonthink();

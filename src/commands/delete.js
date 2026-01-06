@@ -20,6 +20,11 @@ export function registerDeleteCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Suppress output on success')
+    .addHelpText('after', `
+Examples:
+  dt delete ABCD-1234
+  printf "UUID1\\nUUID2\\n" | dt delete - --queue
+`)
     .action(async (uuids, options) => {
       try {
         // Read UUIDs from stdin if first arg is "-"

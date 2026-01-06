@@ -20,6 +20,11 @@ export function registerRevealCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Suppress output')
+    .addHelpText('after', `
+Examples:
+  dt reveal ABCD-1234
+  dt open ABCD-1234 --mode tab
+`)
     .action(async (uuid, options) => {
       try {
         await requireDevonthink();

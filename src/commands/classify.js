@@ -23,6 +23,11 @@ export function registerClassifyCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output proposed group UUIDs')
+    .addHelpText('after', `
+Examples:
+  dt classify suggest ABCD-1234
+  dt classify proposals ABCD-1234 -d "Research" --include-tags
+`)
     .action(async (uuid, options) => {
       try {
         await requireDevonthink();
@@ -54,6 +59,11 @@ export function registerClassifyCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUIDs')
+    .addHelpText('after', `
+Examples:
+  dt classify batch -i '[{"uuid":"ABCD-1234","destination":"/Inbox"}]'
+  cat classify.json | dt classify batch -i -
+`)
     .action(async (options) => {
       try {
         await requireDevonthink();

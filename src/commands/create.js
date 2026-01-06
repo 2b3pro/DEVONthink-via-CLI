@@ -34,6 +34,11 @@ export function registerCreateCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUID of created record')
+    .addHelpText('after', `
+Examples:
+  dt create record -n "Note" -T markdown -d "Inbox" -c "# Title"
+  dt create record -n "Bookmark" -T bookmark -d "Inbox" -u "https://example.com"
+`)
     .action(async (options) => {
       try {
         const params = {
@@ -104,6 +109,11 @@ export function registerCreateCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUID of created record')
+    .addHelpText('after', `
+Examples:
+  dt create markdown "https://example.com" -d "Research"
+  dt create md "https://example.com" -r -t "clipped"
+`)
     .action(async (url, options) => {
       try {
         const params = { url };
@@ -153,6 +163,11 @@ export function registerCreateCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUID of created record')
+    .addHelpText('after', `
+Examples:
+  dt create pdf "https://example.com" -d "Research"
+  dt create pdf "https://example.com" -p -w 1024
+`)
     .action(async (url, options) => {
       try {
         const params = { url };
@@ -203,6 +218,11 @@ export function registerCreateCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUID of created record')
+    .addHelpText('after', `
+Examples:
+  dt create web "https://example.com" -d "Research"
+  dt create clip "https://example.com" -r -t "web"
+`)
     .action(async (url, options) => {
       try {
         const params = { url };
@@ -248,6 +268,11 @@ export function registerCreateCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUID of created record')
+    .addHelpText('after', `
+Examples:
+  dt create bookmark "https://example.com" -n "Example" -d "Inbox"
+  dt create bm "/Users/me/file.pdf" -n "File Link" -d "Inbox"
+`)
     .action(async (url, options) => {
       try {
         const params = {
@@ -302,6 +327,11 @@ export function registerCreateCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUID of created record')
+    .addHelpText('after', `
+Examples:
+  dt create image "surreal landscape" -n "Concept Art" -d "Inbox"
+  dt create ai-image "city skyline" -n "Skyline" -d "Inbox" -s 1024x1024
+`)
     .action(async (prompt, options) => {
       try {
         const params = {

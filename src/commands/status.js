@@ -16,6 +16,11 @@ export function registerStatusCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Exit code only (0=running, 1=not running)')
+    .addHelpText('after', `
+Examples:
+  dt status
+  dt status --json
+`)
     .action(async (options) => {
       try {
         const result = await runJxa('utils', 'isRunning', []);

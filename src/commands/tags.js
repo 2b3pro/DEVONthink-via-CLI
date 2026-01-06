@@ -324,6 +324,11 @@ export function registerTagsCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output tag names (one per line)')
+    .addHelpText('after', `
+Examples:
+  dt tags list -d "Research"
+  dt tags list -d "Research" --sort count --min-count 5
+`)
     .action(async (options) => {
       try {
         await requireDevonthink();
@@ -378,6 +383,11 @@ export function registerTagsCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output problem counts')
+    .addHelpText('after', `
+Examples:
+  dt tags analyze -d "Research"
+  dt tags analyze -d "Research" --category case --export rules.yaml
+`)
     .action(async (options) => {
       try {
         await requireDevonthink();
@@ -469,6 +479,11 @@ export function registerTagsCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Minimal output')
+    .addHelpText('after', `
+Examples:
+  dt tags merge --target "correct" --sources "Wrong" "WRONG" -d "Research"
+  dt tags merge --target "correct" --sources "Wrong" --dry-run
+`)
     .action(async (options) => {
       try {
         if (options.queue) {
@@ -524,6 +539,11 @@ export function registerTagsCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Minimal output')
+    .addHelpText('after', `
+Examples:
+  dt tags rename --from "old" --to "new" -d "Research"
+  dt tags rename --from "old" --to "new" --dry-run
+`)
     .action(async (options) => {
       try {
         if (options.queue) {
@@ -578,6 +598,11 @@ export function registerTagsCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Minimal output')
+    .addHelpText('after', `
+Examples:
+  dt tags delete "temp" "old" -d "Research"
+  dt tags delete "temp" --dry-run
+`)
     .action(async (tagNames, options) => {
       try {
         if (options.queue) {
@@ -629,6 +654,11 @@ export function registerTagsCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Minimal output')
+    .addHelpText('after', `
+Examples:
+  dt tags normalize -d "Research" --auto
+  dt tags normalize -d "Research" -r rules.yaml --apply
+`)
     .action(async (options) => {
       try {
         await requireDevonthink();
@@ -769,6 +799,11 @@ export function registerTagsCommand(program) {
     .option('-d, --database <name>', 'Show database-specific config path')
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
+    .addHelpText('after', `
+Examples:
+  dt tags config
+  dt tags config -d "Research"
+`)
     .action(async (options) => {
       const { existsSync } = await import('fs');
 

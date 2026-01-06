@@ -26,6 +26,11 @@ export function registerLinkCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Minimal output')
+    .addHelpText('after', `
+Examples:
+  dt link UUID1 UUID2
+  dt link UUID1 --no-wiki --no-see-also
+`)
     .action(async (source, target, options) => {
       try {
         await requireDevonthink();
@@ -67,6 +72,11 @@ export function registerLinkCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Minimal output')
+    .addHelpText('after', `
+Examples:
+  dt unlink UUID1 UUID2
+  dt unlink UUID1 --search --chat
+`)
     .action(async (source, target, options) => {
       try {
         await requireDevonthink();

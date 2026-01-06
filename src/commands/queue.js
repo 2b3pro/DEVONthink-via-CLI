@@ -32,6 +32,11 @@ export function registerQueueCommand(program) {
     .description('Show queue status')
     .option('--json', 'Output raw JSON')
     .option('--all', 'Include completed tasks')
+    .addHelpText('after', `
+Examples:
+  dt queue status
+  dt queue status --all
+`)
     .action(async (options) => {
       try {
         const status = await getQueueStatus();
@@ -51,6 +56,10 @@ export function registerQueueCommand(program) {
     .alias('ls')
     .description('List all tasks')
     .option('--json', 'Output raw JSON')
+    .addHelpText('after', `
+Examples:
+  dt queue list
+`)
     .action(async (options) => {
       try {
         const status = await getQueueStatus();
@@ -76,6 +85,11 @@ export function registerQueueCommand(program) {
     .option('--source <src>', 'Source (link)')
     .option('--target <target>', 'Target (link/tag.merge)')
     .option('--json', 'Output raw JSON response')
+    .addHelpText('after', `
+Examples:
+  dt queue add create --name "Doc" --type markdown --database "Inbox"
+  dt queue add move --uuid ABCD-1234 --destination "/Archive"
+`)
     .action(async (action, options) => {
       try {
         // Construct params object from options
@@ -105,6 +119,11 @@ export function registerQueueCommand(program) {
   queue
     .command('load <file>')
     .description('Load tasks from a YAML/JSON file')
+    .addHelpText('after', `
+Examples:
+  dt queue load tasks.yaml
+  cat tasks.json | dt queue load -
+`)
     .action(async (file, options) => {
       try {
         let content;
@@ -142,6 +161,10 @@ export function registerQueueCommand(program) {
     .command('validate')
     .description('Validate the queue')
     .option('--json', 'Output raw JSON')
+    .addHelpText('after', `
+Examples:
+  dt queue validate
+`)
     .action(async (options) => {
       try {
         const result = await validateQueue();
@@ -164,6 +187,10 @@ export function registerQueueCommand(program) {
     .command('verify')
     .description('Deep verify resources in the queue (checks against DEVONthink)')
     .option('--json', 'Output raw JSON')
+    .addHelpText('after', `
+Examples:
+  dt queue verify
+`)
     .action(async (options) => {
       try {
         const result = await verifyQueue();
@@ -199,6 +226,11 @@ export function registerQueueCommand(program) {
     .option('--apply', 'Actually apply the proposed fixes')
     .option('--engine <engine>', 'AI engine to use (default: claude)')
     .option('--json', 'Output raw JSON')
+    .addHelpText('after', `
+Examples:
+  dt queue repair
+  dt queue repair --apply
+`)
     .action(async (options) => {
       try {
         console.log('Analyzing queue and consulting AI...');
@@ -234,6 +266,11 @@ export function registerQueueCommand(program) {
     .option('--dry-run', 'Validate only')
     .option('--verbose', 'Show detailed results')
     .option('--json', 'Output raw JSON')
+    .addHelpText('after', `
+Examples:
+  dt queue execute
+  dt queue execute --dry-run
+`)
     .action(async (options) => {
       try {
         const result = await executeQueue(options);
@@ -251,6 +288,11 @@ export function registerQueueCommand(program) {
     .description('Clear tasks')
     .option('--scope <scope>', 'completed, failed, or all', 'completed')
     .option('--all', 'Alias for --scope all')
+    .addHelpText('after', `
+Examples:
+  dt queue clear
+  dt queue clear --scope all
+`)
     .action(async (options) => {
       try {
         const scope = options.all ? 'all' : (options.scope || 'completed');

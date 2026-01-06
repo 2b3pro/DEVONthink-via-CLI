@@ -23,6 +23,11 @@ export function registerSummarizeCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output the summary text or UUID')
+    .addHelpText('after', `
+Examples:
+  dt summarize ABCD-1234
+  dt sum ABCD-1234 --native --type annotations
+`)
     .action(async (uuids, options) => {
       try {
         let recordUuids = uuids;

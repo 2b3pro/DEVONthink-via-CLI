@@ -23,6 +23,11 @@ export function registerUpdateCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Minimal output')
+    .addHelpText('after', `
+Examples:
+  dt update ABCD-1234 -c "New content"
+  dt update ABCD-1234 -f ./notes.md --comments
+`)
     .action(async (uuid, options) => {
       try {
         await requireDevonthink();

@@ -22,6 +22,11 @@ export function registerMoveCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output moved record UUIDs')
+    .addHelpText('after', `
+Examples:
+  dt move ABCD-1234 --to "/Archive" -d "Research"
+  printf "UUID1\\nUUID2\\n" | dt move - --to "/Archive" -d "Research"
+`)
     .action(async (uuids, options) => {
       try {
         // Read UUIDs from stdin if first arg is "-"

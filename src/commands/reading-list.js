@@ -20,6 +20,11 @@ export function registerReadingListCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Minimal output')
+    .addHelpText('after', `
+Examples:
+  dt reading-list add "https://example.com/article"
+  dt rl add ABCD-1234
+`)
     .action(async (uuidOrUrl, options) => {
       try {
         await requireDevonthink();

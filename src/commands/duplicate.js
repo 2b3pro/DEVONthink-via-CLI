@@ -18,6 +18,11 @@ export function registerDuplicateCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output copied record UUIDs')
+    .addHelpText('after', `
+Examples:
+  dt duplicate ABCD-1234 --to "/Archive" -d "Research"
+  dt dup ABCD-1234 EFGH-5678 --to "/Archive" -d "Research"
+`)
     .action(async (uuids, options) => {
       try {
         await requireDevonthink();

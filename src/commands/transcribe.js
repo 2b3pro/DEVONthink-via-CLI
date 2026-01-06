@@ -32,6 +32,11 @@ export function registerTranscribeCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output the transcription text')
+    .addHelpText('after', `
+Examples:
+  dt transcribe ABCD-1234 --language en
+  dt tr ABCD-1234 --ai-cleanup --save -d "Inbox"
+`)
     .action(async (uuid, options) => {
       try {
         await requireDevonthink();

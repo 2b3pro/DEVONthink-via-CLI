@@ -24,6 +24,11 @@ export function registerDownloadCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Minimal output')
+    .addHelpText('after', `
+Examples:
+  dt download add "https://example.com/file.zip"
+  dt download queue "https://example.com/file.zip" --automatic
+`)
     .action(async (url, options) => {
       try {
         await requireDevonthink();
@@ -62,6 +67,11 @@ export function registerDownloadCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output the downloaded content')
+    .addHelpText('after', `
+Examples:
+  dt download url "https://example.com/data.txt"
+  dt download fetch "https://example.com/api" --post '{"q":"test"}'
+`)
     .action(async (url, options) => {
       try {
         await requireDevonthink();
@@ -112,6 +122,11 @@ export function registerDownloadCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output the markup')
+    .addHelpText('after', `
+Examples:
+  dt download markup "https://example.com"
+  dt download html "https://example.com/feed.xml" -e utf-8
+`)
     .action(async (url, options) => {
       try {
         await requireDevonthink();
@@ -162,6 +177,11 @@ export function registerDownloadCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output the JSON data')
+    .addHelpText('after', `
+Examples:
+  dt download json "https://example.com/data.json"
+  dt download api "https://example.com/api" -o /tmp/data.json
+`)
     .action(async (url, options) => {
       try {
         await requireDevonthink();
@@ -203,6 +223,10 @@ export function registerDownloadCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Minimal output')
+    .addHelpText('after', `
+Examples:
+  dt download start
+`)
     .action(async (options) => {
       try {
         await requireDevonthink();
@@ -222,6 +246,10 @@ export function registerDownloadCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Minimal output')
+    .addHelpText('after', `
+Examples:
+  dt download stop
+`)
     .action(async (options) => {
       try {
         await requireDevonthink();

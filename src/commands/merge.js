@@ -15,6 +15,11 @@ export function registerMergeCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUID of merged record')
+    .addHelpText('after', `
+Examples:
+  dt merge UUID1 UUID2 -g "/Merged" -d "Research"
+  dt merge UUID1 UUID2 UUID3
+`)
     .action(async (uuids, options) => {
       try {
         await requireDevonthink();

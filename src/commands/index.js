@@ -18,6 +18,11 @@ export function registerIndexCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUID of indexed record')
+    .addHelpText('after', `
+Examples:
+  dt index "/path/to/folder" -d "Research"
+  dt index "/path/to/file.pdf" -d "Research" -g "/References"
+`)
     .action(async (path, options) => {
       try {
         await requireDevonthink();

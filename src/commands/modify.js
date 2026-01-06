@@ -45,6 +45,11 @@ Modifiable properties are marked with their corresponding option flag.
   Status & Flags:
     flag, unread, state, locked
     `)
+    .addHelpText('after', `
+Examples:
+  dt modify ABCD-1234 --name "New Title"
+  dt modify ABCD-1234 --add-tag urgent --comment "Review next week"
+`)
     .action(async (uuid, options) => {
       try {
         // Build params

@@ -59,6 +59,11 @@ Available properties by category:
     annotation count, attachment count, number of duplicates, number of replicants,
     number of hits
     `)
+    .addHelpText('after', `
+Examples:
+  dt get props ABCD-1234
+  dt get props x-devonthink-item://ABCD-1234 --json
+`)
     .action(async (uuid, options) => {
       try {
         await requireDevonthink();
@@ -91,6 +96,11 @@ Available properties by category:
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output the preview text')
+    .addHelpText('after', `
+Examples:
+  dt get preview ABCD-1234
+  dt get preview ABCD-1234 -l 500 --quiet
+`)
     .action(async (uuid, options) => {
       try {
         await requireDevonthink();
@@ -127,6 +137,11 @@ Available properties by category:
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUIDs')
+    .addHelpText('after', `
+Examples:
+  dt get selection
+  dt get selection --quiet
+`)
     .action(async (options) => {
       try {
         await requireDevonthink();
@@ -149,6 +164,11 @@ Available properties by category:
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output words (one per line)')
+    .addHelpText('after', `
+Examples:
+  dt get concordance ABCD-1234
+  dt get concordance ABCD-1234 --sort frequency --limit 25
+`)
     .action(async (uuid, options) => {
       try {
         await requireDevonthink();
@@ -181,6 +201,11 @@ Available properties by category:
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output the value')
+    .addHelpText('after', `
+Examples:
+  dt get metadata ABCD-1234 author
+  dt get metadata ABCD-1234 reviewer --quiet
+`)
     .action(async (uuid, field, options) => {
       try {
         await requireDevonthink();
@@ -208,6 +233,11 @@ Available properties by category:
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output field names (one per line)')
+    .addHelpText('after', `
+Examples:
+  dt get metadata-list ABCD-1234
+  dt get metadata-list ABCD-1234 --quiet
+`)
     .action(async (uuid, options) => {
       try {
         await requireDevonthink();
@@ -246,6 +276,11 @@ Available properties by category:
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output the transcription text')
+    .addHelpText('after', `
+Examples:
+  dt get transcribe ABCD-1234 --language en
+  dt get transcribe ABCD-1234 --ai-cleanup --save -d "Inbox"
+`)
     .action(async (uuid, options) => {
       try {
         await requireDevonthink();
@@ -298,6 +333,11 @@ Available properties by category:
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUIDs')
+    .addHelpText('after', `
+Examples:
+  dt get related ABCD-1234
+  dt get related ABCD-1234 --by-tags -l 10
+`)
     .action(async (uuid, options) => {
       try {
         await requireDevonthink();

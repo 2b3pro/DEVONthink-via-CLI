@@ -30,6 +30,11 @@ export function registerConvertCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output converted record UUID')
+    .addHelpText('after', `
+Examples:
+  dt convert ABCD-1234 --to markdown
+  dt convert ABCD-1234 --to pdf --group "/Exports"
+`)
     .action(async (uuid, options) => {
       try {
         const params = {

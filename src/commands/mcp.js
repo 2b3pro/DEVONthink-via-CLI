@@ -15,6 +15,10 @@ export function registerMcpCommand(program) {
   mcp
     .command('run')
     .description('Run the MCP server on stdio')
+    .addHelpText('after', `
+Examples:
+  dt mcp run
+`)
     .action(async () => {
       try {
         await requireDevonthink();
@@ -31,6 +35,10 @@ export function registerMcpCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Minimal output')
+    .addHelpText('after', `
+Examples:
+  dt mcp config
+`)
     .action((options) => {
         const fullPath = process.argv[1];
         const config = {

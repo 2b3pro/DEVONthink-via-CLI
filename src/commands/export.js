@@ -15,6 +15,11 @@ export function registerExportCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output the exported path')
+    .addHelpText('after', `
+Examples:
+  dt export ABCD-1234 -o "/tmp/export"
+  dt export ABCD-1234 -o "/tmp/export" --no-metadata
+`)
     .action(async (uuid, options) => {
       try {
         await requireDevonthink();
@@ -49,6 +54,11 @@ export function registerExportCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Minimal output')
+    .addHelpText('after', `
+Examples:
+  dt deconsolidate ABCD-1234 -o "/tmp/external"
+  dt externalize ABCD-1234
+`)
     .action(async (uuid, options) => {
       try {
         await requireDevonthink();
