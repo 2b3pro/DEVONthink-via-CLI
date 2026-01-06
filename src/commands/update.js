@@ -13,7 +13,7 @@ import { readStdin, isStdinMarker } from '../utils.js';
 export function registerUpdateCommand(program) {
   program
     .command('update <uuid>')
-    .description('Update text content, annotation, comment, or custom metadata of a record')
+    .description('Update a record\'s main text content from a file or stdin. Use "modify" to set metadata properties.')
     .option('-m, --mode <mode>', 'Update mode: setting (replace), inserting (after first line), appending (default: setting)')
     .option('-c, --content <text>', 'Text content to update (use - for stdin)')
     .option('-f, --file <path>', 'Read content from file')

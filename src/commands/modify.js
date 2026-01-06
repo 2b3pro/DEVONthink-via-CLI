@@ -12,7 +12,7 @@ export function registerModifyCommand(program) {
   program
     .command('modify <uuid>')
     .alias('mod')
-    .description('Modify record properties')
+    .description('Set properties (metadata and attributes) of a record. The counterpart to "get props".')
     .option('-n, --name <newName>', 'Rename the record')
     .option('--add-tag <tag>', 'Add tag (can be used multiple times)', collectValues, [])
     .option('--remove-tag <tag>', 'Remove tag (can be used multiple times)', collectValues, [])
@@ -23,6 +23,26 @@ export function registerModifyCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUID')
+    .addHelpText('after', `
+Modifiable properties are marked with their corresponding option flag.
+
+  Identity:
+    name (-n, --name), filename, path, location
+
+  Content & Type:
+    url, reference URL
+
+  Organization & Metadata:
+    tags (--add-tag, --remove-tag, --set-tags)
+    aliases
+    label
+    rating
+    comment (-c, --comment)
+    custom metadata (--meta)
+
+  Status & Flags:
+    flag, unread, state, locked
+    `)
     .action(async (uuid, options) => {
       try {
         await requireDevonthink();

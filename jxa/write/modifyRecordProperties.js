@@ -11,7 +11,7 @@ const jsonArg = getArg(4, null);
 if (!jsonArg) {
   JSON.stringify({
     success: false,
-    error: 'Usage: modifyRecordProperties.js \'{\"uuid\":\"...\",\"newName\":\"...\"}\'`
+    error: "Usage: modifyRecordProperties.js '{\"uuid\":\"...\",\"newName\":\"...\"}'"
   });
 } else {
   try {

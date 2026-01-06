@@ -55,6 +55,9 @@ describe('DevonThink CLI Commands', () => {
         assert.ok(result.uuid);
         assert.ok(result.name);
         assert.ok(result.recordType);
+        assert.ok(result.filename !== undefined);
+        assert.ok(result.mimeType !== undefined);
+        assert.ok(result.creationDate !== undefined);
       });
 
       it('should fail for invalid UUID', async () => {

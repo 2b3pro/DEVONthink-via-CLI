@@ -25,6 +25,39 @@ export function registerGetCommand(program) {
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUID')
+    .addHelpText('after', `
+Available properties by category:
+
+  Identity:
+    uuid, name, filename, original name, id, database, path, location
+
+  Content & Type:
+    kind, type, record type, MIME type, plain text, rich text, source, url, 
+    reference URL, web archive, formatted note, markdown source
+
+  Dates:
+    creation date, modification date, addition date, opening date, 
+    document date, all document dates
+
+  Organization & Metadata:
+    tags, aliases, label, rating, comment, custom metadata,
+    annotation, attached script
+
+  Status & Flags:
+    flag, flagged, unread, state, locked, locking, pending, indexed, encrypted
+
+  Metrics:
+    size, word count, character count, page count, duration, width, height, 
+    dpi, score, dimensions
+
+  Exclusions:
+    exclude from search, exclude from classification, exclude from see also, 
+    exclude from tagging, exclude from Wiki linking, exclude from chat
+
+  Counts:
+    annotation count, attachment count, number of duplicates, number of replicants,
+    number of hits
+    `)
     .action(async (uuid, options) => {
       try {
         await requireDevonthink();

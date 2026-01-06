@@ -88,8 +88,22 @@ export async function runJxa(category, scriptName, args = []) {
  * @returns {Promise<boolean>}
  */
 export async function isDevonthinkRunning() {
-  const result = await runJxa('utils', 'isRunning');
-  return result.success && result.running === true;
+  const scriptPath = resolve(JXA_DIR, 'utils', 'isRunning.js');
+  try {
+    const scriptContent = await readFile(scriptPath, 'utf8');
+    const { stdout } = await execFileAsync(
+      'osascript',
+      ['-l', 'JavaScript', '-e', scriptContent],
+      { timeout: 5000 }
+    );
+    const trimmed = stdout.trim();
+    if (!trimmed) return { success: false, running: false, error: 'Empty response from isRunning script' };
+    const result = JSON.parse(trimmed);
+    return result.success && result.running === true;
+  } catch (error) {
+    console.error(`Error checking DEVONthink status: ${error.message}`);
+    return { success: false, running: false, error: error.message };
+  }
 }
 
 /**
