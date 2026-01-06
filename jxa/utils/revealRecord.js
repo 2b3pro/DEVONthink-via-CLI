@@ -31,7 +31,7 @@ function isUuid(str) {
 // Extract UUID from x-devonthink-item:// URL or return raw UUID
 function extractUuid(str) {
   if (!str) return null;
-  const urlMatch = str.match(/^x-devonthink-item:\/\/([A-F0-9-]+)$/i);
+  const urlMatch = str.match(/^x-devonthink-item:\/\/([A-F0-9-]+)(?:\?.*)?$/i);
   if (urlMatch) return urlMatch[1];
   if (isUuid(str)) return str;
   return str; // Return as-is, let DEVONthink handle validation

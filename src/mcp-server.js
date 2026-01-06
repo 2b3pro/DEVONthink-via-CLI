@@ -43,6 +43,39 @@ const TOOLS = [
     },
   },
   {
+    name: "get_record_properties",
+    description: "Get detailed metadata for a specific record (tags, comment, dates, path, etc.).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        uuid: { type: "string", description: "The UUID of the record" },
+      },
+      required: ["uuid"],
+    },
+  },
+  {
+    name: "explore_devonthink",
+    description: "Navigate and explore the DEVONthink environment (databases, selection, groups, reveal UI).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        scope: { 
+          type: "string", 
+          enum: ["databases", "selection", "children", "reveal"],
+          description: "What to explore or action to take"
+        },
+        uuid: { type: "string", description: "Target UUID (required for 'children' and 'reveal')" },
+        mode: { 
+          type: "string", 
+          enum: ["window", "tab", "reveal"],
+          description: "Reveal mode (default 'window')",
+          default: "window"
+        },
+      },
+      required: ["scope"],
+    },
+  },
+  {
     name: "get_record_content",
     description: "Read the plain text content or markdown of a specific record by UUID.",
     inputSchema: {
@@ -153,6 +186,37 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           args.query,
           JSON.stringify({ database: args.database, limit: args.limit || 20 })
         ]);
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case "get_record_properties": {
+        const result = await runJxa("read", "getRecordProperties", [args.uuid]);
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case "explore_devonthink": {
+        const { scope, uuid, mode } = args;
+        let result;
+        
+        switch (scope) {
+          case "databases":
+            result = await runJxa("read", "listDatabases", []);
+            break;
+          case "selection":
+            result = await runJxa("read", "getSelection", []);
+            break;
+          case "children":
+            if (!uuid) throw new Error("UUID is required for 'children' scope");
+            result = await runJxa("read", "listGroupContents", [JSON.stringify({ groupRef: uuid })]);
+            break;
+          case "reveal":
+            if (!uuid) throw new Error("UUID is required for 'reveal' scope");
+            // mode can be window, tab, or reveal (reveal means navigate in-place)
+            result = await runJxa("utils", "revealRecord", [uuid, "self", mode || "window"]);
+            break;
+          default:
+            throw new Error(`Unknown scope: ${scope}`);
+        }
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
