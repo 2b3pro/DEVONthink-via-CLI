@@ -162,7 +162,7 @@ const TOOLS = [
         name: { type: "string", description: "Name/Title (create/update)" },
         type: { 
           type: "string", 
-          enum: ["markdown", "txt", "rtf", "bookmark", "html", "group"],
+          enum: ["markdown", "txt", "rtf", "bookmark", "html", "group", "smart group"],
           description: "Record type (create only)",
           default: "markdown"
         },
@@ -172,6 +172,7 @@ const TOOLS = [
         url: { type: "string", description: "URL (create bookmark/update)" },
         tags: { type: "array", items: { type: "string" }, description: "Tags to set/add" },
         comment: { type: "string", description: "Comment to set" },
+        query: { type: "string", description: "Search query (create smart group)" },
         convertFormat: { type: "string", description: "Format to convert to (markdown, pdf, etc.)" }
       },
       required: ["action"],
@@ -417,7 +418,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case "manage_record": {
-        const { action, uuid, name, type, content, database, destination, url, tags, comment, convertFormat } = args;
+        const { action, uuid, name, type, content, database, destination, url, tags, comment, convertFormat, query } = args;
         
         let scriptName;
         let scriptArgs = {};
@@ -432,7 +433,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               database: database || process.env.DT_DEFAULT_DATABASE,
               groupPath: destination,
               url,
-              tags
+              tags,
+              query
             };
             break;
 

@@ -20,7 +20,7 @@ if (!jsonArg) {
 } else {
   try {
     const params = JSON.parse(jsonArg);
-    const { name, type, database: databaseRef, groupPath, content, url, tags } = params;
+    const { name, type, database: databaseRef, groupPath, content, url, tags, query } = params;
 
     if (!name) throw new Error("Missing required field: name");
     if (!type) throw new Error("Missing required field: type");
@@ -57,7 +57,7 @@ if (!jsonArg) {
     if (url) createProps.URL = url;
 
     // Validate type
-    const validTypes = ["markdown", "txt", "rtf", "bookmark", "html", "group"];
+    const validTypes = ["markdown", "txt", "rtf", "bookmark", "html", "group", "smart group"];
     if (!validTypes.includes(type)) {
       throw new Error("Unknown type: " + type + ". Valid: " + validTypes.join(", "));
     }
@@ -65,6 +65,12 @@ if (!jsonArg) {
     // Bookmark requires URL
     if (type === "bookmark" && !url) {
       throw new Error("URL required for bookmark type");
+    }
+
+    // Smart Group requires query
+    if (type === "smart group") {
+      if (!query) throw new Error("Query required for smart group type");
+      createProps.searchQuery = query;
     }
 
     // Create record
