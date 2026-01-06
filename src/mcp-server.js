@@ -9,6 +9,8 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
+  ListResourcesRequestSchema,
+  ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { runJxa } from "./jxa-runner.js";
 import { processRecord } from "./commands/organize.js";
@@ -183,6 +185,159 @@ const TOOLS = [
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: TOOLS,
 }));
+
+/**
+ * Resource Handlers
+ */
+server.setRequestHandler(ListResourcesRequestSchema, async () => {
+  // Get list of databases to expose their smart groups
+  const dbs = await runJxa("read", "listDatabases", []);
+  
+  const resources = [
+    {
+      uri: "devonthink://inbox",
+      name: "Global Inbox",
+      mimeType: "application/json",
+      description: "Contents of the Global Inbox"
+    },
+    {
+      uri: "devonthink://selection",
+      name: "Current Selection",
+      mimeType: "application/json",
+      description: "Currently selected records in DEVONthink"
+    }
+  ];
+
+  if (dbs.success !== false) { // dbs is array on success
+    dbs.forEach(db => {
+      resources.push({
+        uri: `devonthink://${encodeURIComponent(db.name)}/smartgroups`,
+        name: `Smart Groups: ${db.name}`,
+        mimeType: "application/json",
+        description: `Root-level smart groups in ${db.name}`
+      });
+    });
+  }
+
+  return { resources };
+});
+
+server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+  const uri = request.params.uri;
+  const url = new URL(uri);
+  const pathParts = url.pathname.split("/").filter(p => p.length > 0);
+  
+  // URL parsing:
+  // devonthink://inbox -> hostname=inbox, path=""
+  // devonthink://selection -> hostname=selection
+  // devonthink://dbname/smartgroups -> hostname=dbname, path=smartgroups
+  // devonthink://dbname/smartgroup/xyz -> hostname=dbname, path=smartgroup/xyz
+  
+  const hostname = url.hostname; // dbName or 'inbox'/'selection'
+  
+  try {
+    if (hostname === "inbox") {
+      const result = await runJxa("read", "listGroupContents", [JSON.stringify({ groupRef: "Inbox" })]);
+      return {
+        contents: [{
+          uri: uri,
+          mimeType: "application/json",
+          text: JSON.stringify(result, null, 2)
+        }]
+      };
+    }
+
+    if (hostname === "selection") {
+      const result = await runJxa("read", "getSelection", []);
+      return {
+        contents: [{
+          uri: uri,
+          mimeType: "application/json",
+          text: JSON.stringify(result, null, 2)
+        }]
+      };
+    }
+
+    // Database Resources
+    const dbName = decodeURIComponent(hostname);
+    
+    // Check path for specific resource type
+    if (pathParts[0] === "smartgroups") {
+      // List smart groups in this DB
+      const result = await runJxa("read", "listSmartGroups", [dbName]);
+      return {
+        contents: [{
+          uri: uri,
+          mimeType: "application/json",
+          text: JSON.stringify(result, null, 2)
+        }]
+      };
+    }
+
+    if (pathParts[0] === "smartgroup" && pathParts[1]) {
+      // Read contents of a specific smart group
+      // pathParts[1] is the smart group name or UUID
+      // We first need to resolve it. 
+      // listGroupContents expects a UUID or path.
+      // If we pass a name, listGroupContents might fail if it expects UUID.
+      // But my listGroupContents supports "Database" + "Path".
+      // So if pathParts[1] is a name, we can pass dbName and "/" + pathParts[1]
+      
+      const identifier = decodeURIComponent(pathParts[1]);
+      let result;
+      
+      // Try to treat identifier as UUID first?
+      if (identifier.match(/^[A-F0-9-]{36}$/i)) { // Simple UUID check
+         result = await runJxa("read", "listGroupContents", [JSON.stringify({ groupRef: identifier })]);
+      } else {
+         // Treat as name in root of DB
+         // We construct a legacy call or just use listGroupContents logic?
+         // listGroupContents in "legacy" mode takes (db, path).
+         // But via JSON mode it takes groupRef (UUID).
+         
+         // I need a way to resolve name to UUID first?
+         // Or update listGroupContents to handle db+path in JSON.
+         // My listGroupContents.js supports legacy args arg1, arg2.
+         // But passing JSON {"groupRef": "..."} assumes UUID.
+         
+         // Let's rely on UUIDs in URIs ideally.
+         // But if user asks for "To Process", they use name.
+         
+         // I'll assume for now resources are listed with UUIDs in the list_smartgroups output?
+         // listSmartGroups returns {name, uuid...}.
+         // So if I use those to generate subsequent URIs, I should use UUIDs.
+         // But here I am handling `devonthink://...`.
+         
+         // Let's try to lookup by name if not UUID.
+         // I'll leverage the fact that listGroupContents accepts db+path if I pass raw args?
+         // But runJxa passes JSON usually.
+         
+         // Actually, I can use the `listSmartGroups` logic to find it first.
+         const groups = await runJxa("read", "listSmartGroups", [dbName]);
+         const found = groups.smartGroups?.find(g => g.name === identifier || g.uuid === identifier);
+         
+         if (found) {
+            result = await runJxa("read", "listGroupContents", [JSON.stringify({ groupRef: found.uuid })]);
+         } else {
+            throw new Error(`Smart group not found: ${identifier} in ${dbName}`);
+         }
+      }
+
+      return {
+        contents: [{
+          uri: uri,
+          mimeType: "application/json",
+          text: JSON.stringify(result, null, 2)
+        }]
+      };
+    }
+
+    throw new Error(`Unknown resource path: ${uri}`);
+    
+  } catch (error) {
+    throw new Error(`Failed to read resource ${uri}: ${error.message}`);
+  }
+});
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
