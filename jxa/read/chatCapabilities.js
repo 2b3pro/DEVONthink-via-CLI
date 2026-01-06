@@ -15,13 +15,6 @@
 
 ObjC.import("Foundation");
 
-function getArg(index, defaultValue) {
-  const args = $.NSProcessInfo.processInfo.arguments;
-  if (args.count <= index) return defaultValue;
-  const arg = ObjC.unwrap(args.objectAtIndex(index));
-  return arg && arg.length > 0 ? arg : defaultValue;
-}
-
 // Map CLI engine names to DEVONthink AppleScript enum names
 const ENGINE_MAP = {
   'chatgpt': 'ChatGPT',

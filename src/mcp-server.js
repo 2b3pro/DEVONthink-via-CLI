@@ -97,11 +97,15 @@ const TOOLS = [
       type: "object",
       properties: {
         uuid: { type: "string", description: "The record UUID to explore" },
-        type: { 
-          type: "string", 
-          enum: ["all", "incoming", "outgoing", "similar"],
-          description: "Type of relation to return",
+        type: {
+          type: "string",
+          enum: ["all", "incoming", "outgoing", "similar", "byData", "byTags"],
+          description: "Type of relation to return. 'byData' uses text/metadata comparison, 'byTags' uses tag comparison.",
           default: "all"
+        },
+        database: {
+          type: "string",
+          description: "Optional database name to scope classification (only for byData/byTags)"
         },
       },
       required: ["uuid"],
@@ -394,9 +398,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case "get_related_records": {
-        const result = await runJxa("read", "getRelated", [
-          JSON.stringify({ uuid: args.uuid, type: args.type || "all" })
-        ]);
+        const params = { uuid: args.uuid, type: args.type || "all" };
+        if (args.database) params.database = args.database;
+        const result = await runJxa("read", "getRelated", [JSON.stringify(params)]);
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 

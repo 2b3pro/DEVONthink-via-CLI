@@ -6,21 +6,6 @@
 
 ObjC.import("Foundation");
 
-function getArg(index, defaultValue) {
-  const args = $.NSProcessInfo.processInfo.arguments;
-  if (args.count <= index) return defaultValue;
-  const arg = ObjC.unwrap(args.objectAtIndex(index));
-  return arg && arg.length > 0 ? arg : defaultValue;
-}
-
-function extractUuid(str) {
-  if (!str) return null;
-  const urlMatch = str.match(/^x-devonthink-item:\/\/([A-F0-9-]+)(?:\?.*)?$/i);
-  if (urlMatch) return urlMatch[1];
-  if (/^[A-F0-9-]{8,}$/i.test(str) && str.includes("-")) return str;
-  return str;
-}
-
 const jsonArg = getArg(4, null);
 
 if (!jsonArg) {

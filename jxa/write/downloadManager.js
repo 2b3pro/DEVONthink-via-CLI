@@ -10,13 +10,6 @@
 
 ObjC.import("Foundation");
 
-function getArg(index, defaultValue) {
-  const args = $.NSProcessInfo.processInfo.arguments;
-  if (args.count <= index) return defaultValue;
-  const arg = ObjC.unwrap(args.objectAtIndex(index));
-  return arg && arg.length > 0 ? arg : defaultValue;
-}
-
 const jsonArg = getArg(4, null);
 
 if (!jsonArg) {

@@ -4,7 +4,7 @@ This file provides guidance for Claude Code when working in this repository.
 
 ## Project Overview
 
-DEVONthink MCP (`dt`) is a Node.js command-line and Model Context Protocol interface for DEVONthink 4 on macOS. It wraps JXA (JavaScript for Automation) scripts to interact with DEVONthink via AppleScript.
+DEVONthink MCP (`dt`) is a Node.js command-line and Model Context Protocol interface for DEVONthink 4 (DT, or DT4) on macOS. It wraps JXA (JavaScript for Automation) scripts to interact with DEVONthink via AppleScript.
 
 ## Build & Run Commands
 

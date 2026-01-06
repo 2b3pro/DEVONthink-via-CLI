@@ -35,11 +35,12 @@ export function registerMcpCommand(program) {
         const fullPath = process.argv[1];
         const config = {
             "mcpServers": {
-                "devonthink": {
-                    "command": "node",
+                "devonthink-mcp": {
+                    "command": process.execPath,
                     "args": [fullPath, "mcp", "run"],
                     "env": {
-                        "PATH": process.env.PATH
+                        "PATH": process.env.PATH,
+                        "DT_ORGANIZE_PROMPT": process.env.DT_ORGANIZE_PROMPT || ""
                     }
                 }
             }

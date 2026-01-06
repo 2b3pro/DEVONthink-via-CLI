@@ -235,8 +235,11 @@ export function registerGetCommand(program) {
   get
     .command('related <uuid>')
     .alias('links')
-    .description('Get related records (backlinks, wikilinks, AI suggestions)')
+    .description('Get related records (backlinks, wikilinks, AI suggestions, or classification)')
     .option('-t, --type <type>', 'Type of relation: incoming, outgoing, similar, all', 'all')
+    .option('--by-data', 'Find related by data comparison (text & metadata)')
+    .option('--by-tags', 'Find related by tags comparison')
+    .option('-d, --database <name>', 'Limit classification scope to database')
     .option('-l, --limit <n>', 'Limit number of results', parseInt, 20)
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
@@ -244,12 +247,20 @@ export function registerGetCommand(program) {
     .action(async (uuid, options) => {
       try {
         await requireDevonthink();
+
+        // Determine type based on flags
+        let type = options.type;
+        if (options.byData) type = 'byData';
+        if (options.byTags) type = 'byTags';
+
         const params = {
           uuid,
-          type: options.type,
+          type,
           limit: options.limit
         };
-        
+
+        if (options.database) params.database = options.database;
+
         const result = await runJxa('read', 'getRelated', [JSON.stringify(params)]);
 
         if (options.quiet && result.success) {

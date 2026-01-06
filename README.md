@@ -99,6 +99,13 @@ dt get metadata <uuid> <field>
 
 # List all custom metadata fields for a record
 dt get metadata-list <uuid>
+
+# Get related records (backlinks, similar, classification)
+dt get related <uuid>
+dt get related <uuid> --type incoming   # Backlinks only
+dt get related <uuid> --type similar    # AI suggestions
+dt get related <uuid> --by-data         # By text/metadata
+dt get related <uuid> --by-tags         # By tags
 ```
 
 ### Transcribe
@@ -351,19 +358,37 @@ dt get related <uuid>
 
 # Filter relations by type
 dt get related <uuid> --type incoming  # Backlinks only
+dt get related <uuid> --type outgoing  # Outgoing wiki links
 dt get related <uuid> --type similar   # AI suggestions only
+
+# Find related by classification (DEVONthink's classify algorithm)
+dt get related <uuid> --by-data        # Compare by text & metadata
+dt get related <uuid> --by-tags        # Compare by tags
+dt get related <uuid> --by-data -d "Research"  # Scope to database
 
 # Manually link two records (appends markdown link to source)
 dt link <source-uuid> <target-uuid>
 
-# Enable magic linking features for a record
-dt link <uuid> --wiki --see-also
+# Enable linking features (use --flag to enable)
+dt link <uuid> --wiki              # Enable Wiki Linking
+dt link <uuid> --see-also          # Enable See Also suggestions
+dt link <uuid> --search            # Enable search indexing
+dt link <uuid> --chat              # Enable AI chat context
+dt link <uuid> --classification    # Enable classification
 
-# Disable magic linking features
-dt unlink <uuid> --wiki --see-also
+# Disable linking features (use --no-flag to disable)
+dt link <uuid> --no-wiki           # Disable Wiki Linking
+dt link <uuid> --no-see-also       # Disable See Also
+dt link <uuid> --no-search         # Hide from search
+dt link <uuid> --no-chat           # Hide from AI chat
+dt link <uuid> --no-classification # Hide from classification
 
-# Configure specific visibility flags
+# Combine multiple flags
+dt link <uuid> --wiki --see-also   # Enable both
 dt link <uuid> --no-search --no-chat  # Hide from search and AI
+
+# Alternative: use unlink command to disable features
+dt unlink <uuid> --wiki --see-also --search --chat --classification
 ```
 
 ### Delete Records

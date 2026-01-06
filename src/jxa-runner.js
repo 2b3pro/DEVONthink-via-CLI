@@ -30,11 +30,11 @@ export async function runJxa(category, scriptName, args = []) {
       readFile(helpersPath, 'utf8')
     ]);
 
-    // Remove shebang from script if present
-    const cleanScript = scriptContent.replace(/^#!.*\n/, '');
+    const cleanHelpers = helpersContent.replace(/^(?:(?:\/\/.*|\s*)\r?\n)+/, ''); // Remove leading comments and empty lines
+    const cleanScript = scriptContent.replace(/^#!.*\r?\n/, '');
     
     // Combine helpers and script
-    const fullScript = `${helpersContent}\n${cleanScript}`;
+    const fullScript = `${cleanHelpers}\n${cleanScript}`;
 
     const { stdout, stderr } = await execFileAsync(
       'osascript',

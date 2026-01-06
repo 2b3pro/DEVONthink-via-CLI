@@ -114,6 +114,6 @@ The server exposes the following tools to the AI:
 | `manage_record` | Create, update, move, trash, or convert records. |
 | `get_record_properties` | Fetch detailed metadata for a specific record UUID. |
 | `get_record_content` | Read text/markdown content of a record. |
-| `get_related_records` | Find backlinks, wiki links, or similar items. |
+| `get_related_records` | Find backlinks, wiki links, similar items, or classify by data/tags. |
 | `organize_record` | Perform OCR, rename, and tag a record intelligently. |
 | `summarize_record` | Generate and save an AI summary of a record. |

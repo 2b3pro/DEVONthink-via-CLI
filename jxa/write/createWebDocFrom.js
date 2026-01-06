@@ -11,63 +11,6 @@
 
 ObjC.import("Foundation");
 
-function getArg(index, defaultValue) {
-  const args = $.NSProcessInfo.processInfo.arguments;
-  if (args.count <= index) return defaultValue;
-  const arg = ObjC.unwrap(args.objectAtIndex(index));
-  return arg && arg.length > 0 ? arg : defaultValue;
-}
-
-// Detect if string looks like a UUID or DEVONthink URL
-function isUuid(str) {
-  if (!str || typeof str !== "string") return false;
-  if (str.startsWith("x-devonthink-item://")) return true;
-  if (str.includes("/")) return false;
-  return /^[A-F0-9-]{8,}$/i.test(str) && str.includes("-");
-}
-
-// Extract UUID from x-devonthink-item:// URL or return raw UUID
-function extractUuid(str) {
-  if (!str) return null;
-  const urlMatch = str.match(/^x-devonthink-item:\/\/([A-F0-9-]+)$/i);
-  if (urlMatch) return urlMatch[1];
-  if (isUuid(str)) return str;
-  return str; // Return as-is, let DEVONthink handle validation
-}
-
-// Resolve database by name or UUID
-function getDatabase(theApp, ref) {
-  if (!ref) return null;
-  if (isUuid(ref)) {
-    const record = theApp.getRecordWithUuid(extractUuid(ref));
-    if (record) return record.database();
-    throw new Error("Database not found with UUID: " + ref);
-  }
-  const databases = theApp.databases();
-  const found = databases.find(db => db.name() === ref);
-  if (!found) throw new Error("Database not found: " + ref);
-  return found;
-}
-
-// Resolve group by path or UUID
-function resolveGroup(theApp, ref, database) {
-  if (!ref || ref === "/") return database.root();
-  if (isUuid(ref)) {
-    const group = theApp.getRecordWithUuid(extractUuid(ref));
-    if (!group) throw new Error("Group not found with UUID: " + ref);
-    return group;
-  }
-  let current = database.root();
-  const parts = ref.split("/").filter(p => p.length > 0);
-  for (const part of parts) {
-    const children = current.children();
-    const found = children.find(c => c.name() === part);
-    if (!found) throw new Error("Group not found: " + part);
-    current = found;
-  }
-  return current;
-}
-
 const jsonArg = getArg(4, null);
 
 if (!jsonArg) {

@@ -1,18 +1,38 @@
 // DEVONthink JXA Shared Helper Functions
 // This file is prepended to scripts by the JXA runner.
 
-ObjC.import("Foundation");
-
 /**
  * Get command line argument safely
- * @param {number} index - Argument index
+ * Handles both shebang usage (args start at 4) and osascript -e usage (args start after --)
+ * @param {number} index - The absolute index expected by legacy scripts (4 = first user arg)
  * @param {any} defaultValue - Default value if missing
  * @returns {string|any} - The argument value
  */
 function getArg(index, defaultValue) {
   const args = $.NSProcessInfo.processInfo.arguments;
-  if (args.count <= index) return defaultValue;
-  const arg = ObjC.unwrap(args.objectAtIndex(index));
+  
+  // Look for "--" separator used by runJxa
+  let separatorIndex = -1;
+  for (let i = 0; i < args.count; i++) {
+    if (ObjC.unwrap(args.objectAtIndex(i)) === "--") {
+      separatorIndex = i;
+      break;
+    }
+  }
+
+  let realIndex = index;
+  if (separatorIndex !== -1) {
+    // Adjust index relative to "--"
+    // The caller expects 4 to be the first argument.
+    // In -e mode, (separatorIndex + 1) is the first argument.
+    // So we map: 4 -> separatorIndex + 1
+    //            5 -> separatorIndex + 2
+    //            i -> separatorIndex + 1 + (i - 4)
+    realIndex = separatorIndex + 1 + (index - 4);
+  }
+
+  if (args.count <= realIndex) return defaultValue;
+  const arg = ObjC.unwrap(args.objectAtIndex(realIndex));
   return arg && arg.length > 0 ? arg : defaultValue;
 }
 

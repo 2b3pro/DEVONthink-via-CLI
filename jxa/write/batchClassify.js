@@ -19,64 +19,6 @@
 
 ObjC.import("Foundation");
 
-function getArg(index, defaultValue) {
-  const args = $.NSProcessInfo.processInfo.arguments;
-  if (args.count <= index) return defaultValue;
-  const arg = ObjC.unwrap(args.objectAtIndex(index));
-  return arg && arg.length > 0 ? arg : defaultValue;
-}
-
-// Detect if string looks like a UUID or DEVONthink URL
-function isUuid(str) {
-  if (!str || typeof str !== "string") return false;
-  if (str.startsWith("x-devonthink-item://")) return true;
-  if (str.includes("/")) return false;
-  return /^[A-F0-9-]{8,}$/i.test(str) && str.includes("-");
-}
-
-// Extract UUID from x-devonthink-item:// URL or return raw UUID
-function extractUuid(str) {
-  if (!str) return null;
-  const urlMatch = str.match(/^x-devonthink-item:\/\/([A-F0-9-]+)$/i);
-  if (urlMatch) return urlMatch[1];
-  if (isUuid(str)) return str;
-  return str; // Return as-is, let DEVONthink handle validation
-}
-
-// Navigate to a group by path, optionally creating missing folders
-function getOrCreateGroup(app, database, path, createMissing) {
-  const db = app.databases().find(d => d.name() === database);
-  if (!db) throw new Error("Database not found: " + database);
-
-  if (!path || path === "/") return db.root();
-
-  const parts = path.split("/").filter(p => p.length > 0);
-  let current = db.root();
-
-  for (const part of parts) {
-    const children = current.children();
-    let found = children.find(c => c.name() === part);
-
-    if (!found) {
-      if (createMissing) {
-        // Create the missing group
-        found = app.createRecordWith({ name: part, type: "group" }, { in: current });
-      } else {
-        throw new Error("Path not found: " + path + " (missing: " + part + ")");
-      }
-    }
-
-    const recordType = found.recordType();
-    if (recordType !== "group" && recordType !== "smart group") {
-      throw new Error("Path component is not a group: " + part + " (" + recordType + ")");
-    }
-
-    current = found;
-  }
-
-  return current;
-}
-
 const jsonArg = getArg(4, null);
 
 if (!jsonArg) {

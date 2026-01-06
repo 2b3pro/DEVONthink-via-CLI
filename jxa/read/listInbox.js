@@ -9,28 +9,6 @@
 
 ObjC.import("Foundation");
 
-function getArg(index, defaultValue) {
-  const args = $.NSProcessInfo.processInfo.arguments;
-  if (args.count <= index) return defaultValue;
-  const arg = ObjC.unwrap(args.objectAtIndex(index));
-  return arg && arg.length > 0 ? arg : defaultValue;
-}
-
-// Record types that might need OCR if content is empty
-function mightNeedOCR(recordType) {
-  const ocrTypes = [
-    "PDF document",
-    "picture",
-    "image",
-    "JPEG image",
-    "PNG image",
-    "TIFF image",
-    "GIF image",
-    "PDF+Text"
-  ];
-  return ocrTypes.some(t => recordType.toLowerCase().includes(t.toLowerCase()));
-}
-
 const limit = parseInt(getArg(4, "50"), 10);
 const folderName = getArg(5, "_TO BE FILED");
 const maxChars = parseInt(getArg(6, "0"), 10) || 0;

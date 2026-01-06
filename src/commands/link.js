@@ -61,6 +61,9 @@ export function registerLinkCommand(program) {
     .description('Unlink records or disable linking features')
     .option('--wiki', 'Disable Wiki Linking')
     .option('--see-also', 'Disable See Also')
+    .option('--search', 'Disable Searching')
+    .option('--chat', 'Disable AI Chat')
+    .option('--classification', 'Disable Classification')
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Minimal output')
@@ -78,9 +81,13 @@ export function registerLinkCommand(program) {
         // For unlink command, if flags are present, we set them to FALSE (disable)
         if (options.wiki) params.wiki = false;
         if (options.seeAlso) params.seeAlso = false;
+        if (options.search) params.search = false;
+        if (options.chat) params.chat = false;
+        if (options.classification) params.classification = false;
 
         // If no target and no flags, default to disabling both wiki and see also
-        if (!target && !options.wiki && !options.seeAlso) {
+        const hasAnyFlag = options.wiki || options.seeAlso || options.search || options.chat || options.classification;
+        if (!target && !hasAnyFlag) {
              params.wiki = false;
              params.seeAlso = false;
         }
