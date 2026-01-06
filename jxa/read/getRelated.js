@@ -15,7 +15,7 @@ function getArg(index, defaultValue) {
 
 function extractUuid(str) {
   if (!str) return null;
-  const urlMatch = str.match(/^x-devonthink-item:\/\/([A-F0-9-]+)$/i);
+  const urlMatch = str.match(/^x-devonthink-item:\/\/([A-F0-9-]+)(?:\?.*)?$/i);
   if (urlMatch) return urlMatch[1];
   if (/^[A-F0-9-]{8,}$/i.test(str) && str.includes("-")) return str;
   return str;
