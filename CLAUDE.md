@@ -38,16 +38,25 @@ bin/dt.js              # Entry point
 src/
   index.js             # Commander program setup, registers all commands
   jxa-runner.js        # Executes JXA via osascript, parses JSON responses
+  mcp-server.js        # MCP server implementation
   output.js            # Output formatting (JSON, quiet mode)
   utils.js             # Shared utilities (UUID detection, JXA code generation)
+  rules-loader.js      # Tag normalization rules engine (YAML config)
   commands/            # One file per command
 jxa/
-  read/                # Read-only operations (search, get, list)
-  write/               # Mutating operations (create, modify, delete, import)
+  read/                # Read-only operations (search, get, list, tags)
+  write/               # Mutating operations (create, modify, delete, import, tags)
   utils/               # Utility scripts (isRunning, revealRecord)
+docs/
+  PLANS.md             # Development roadmap
+  SPEC-*.md            # Feature specifications
 test/
   helpers.js           # Test utilities
+  fixtures/            # Test data files (YAML rules, etc.)
   *.test.js            # Test files
+~/.config/dt/          # User config directory (created at runtime)
+  tag-rules.yaml       # Global tag normalization rules
+  databases/           # Per-database config overrides
 ```
 
 ### Command Pattern
@@ -196,6 +205,9 @@ DEVONthink's AppleScript commands translate to JXA:
 | `get chat response for message` | `app.getChatResponseForMessage(prompt, {record: record})` |
 | `create record with {name: n}` | `app.createRecordWith({name: n}, {in: group})` |
 | `get record with uuid` | `app.getRecordWithUuid(uuid)` |
+| `merge records` | `app.merge({records: [records]})` |
+| `get tag groups` | `database.tagGroups()` |
+| `consolidate tags` | `app.consolidate({tags: [tag1, tag2]})` |
 
 ### Consulting the Scripting Dictionary
 
@@ -236,6 +248,8 @@ DEBUG=1 node bin/dt.js import file.pdf -d "Test"
 **Before finalizing any command or feature, always write and run unit tests.**
 
 Tests require DEVONthink running with "Test_Database" open (UUID: `3DAB969D-B963-4056-ABE5-4990E2243F59`).
+
+Current test count: **103 tests** (as of v2.1.1)
 
 ### Running Tests
 
@@ -318,6 +332,181 @@ describe('my-command', () => {
 3. **Test both success and failure** - Use `{ expectFailure: true }` option
 4. **Test edge cases** - Invalid UUIDs, missing databases, empty inputs
 
+## MCP Server
+
+The MCP server (`src/mcp-server.js`) exposes DEVONthink functionality via the Model Context Protocol for AI assistants like Claude.
+
+### Running the MCP Server
+
+```bash
+# Direct
+node bin/dt.js mcp run
+
+# Via Claude Desktop config
+dt mcp config  # Shows config to add to Claude Desktop
+```
+
+### MCP Tools
+
+| Tool | Description |
+|------|-------------|
+| `search_records` | Full-text and metadata search |
+| `get_record_properties` | Get record metadata |
+| `get_record_content` | Get plain text/markdown content |
+| `get_related_records` | Find backlinks, wiki links, similar records |
+| `explore_devonthink` | Navigate databases, selection, groups |
+| `list_group_contents` | List contents of a group |
+| `organize_record` | AI-powered OCR, rename, tag, summarize |
+| `summarize_record` | Generate AI summary |
+| `manage_record` | Create, update, move, trash, convert records |
+
+### MCP Resources
+
+- `devonthink://inbox` - Global Inbox contents
+- `devonthink://selection` - Currently selected records
+- `devonthink://<dbname>/smartgroups` - Smart groups in database
+
+## Tag Management
+
+The `dt tags` command provides comprehensive tag operations with a rules-based normalization engine.
+
+### Tag Commands
+
+```bash
+# List all tags in a database
+dt tags list -d "Database Name"
+dt tags list -d "Database" --sort alpha --min-count 5
+
+# Analyze tag problems (case variants, malformed, low-use)
+dt tags analyze -d "Database"
+
+# Merge tags (consolidate sources into target)
+dt tags merge --target "correct-tag" --sources "Wrong,WRONG" -d "Database"
+
+# Rename a tag
+dt tags rename --from "old-name" --to "new-name" -d "Database"
+
+# Delete a tag
+dt tags delete --tag "unwanted-tag" -d "Database"
+
+# Normalize with rules (dry-run by default)
+dt tags normalize -d "Database" --auto          # Auto-generate rules
+dt tags normalize -d "Database" -r rules.yaml   # Use rules file
+dt tags normalize -d "Database" --apply         # Execute changes
+
+# Show config paths
+dt tags config -d "Database"
+```
+
+### Tag Rules File Format
+
+Rules are loaded from a hierarchy: global → database-specific → explicit file.
+
+```yaml
+# ~/.config/dt/tag-rules.yaml (global)
+# ~/.config/dt/databases/<db-slug>.yaml (per-database)
+
+version: 1
+
+case:
+  strategy: lowercase  # lowercase | uppercase | titlecase | preserve | preserve_first
+
+merges:
+  - target: "correct-tag"
+    sources: ["Wrong-Tag", "wrong_tag"]
+
+renames:
+  - from: "old-name"
+    to: "new-name"
+
+deletions:
+  - "tag-to-delete"
+  - "another-unwanted"
+
+patterns:
+  - match: "^\\s+"      # Regex pattern
+    action: strip       # strip | trim | delete
+
+blocklist:
+  - "temp"
+  - "test"
+
+preserve:
+  - "DontTouchThis"     # Tags to never modify
+```
+
+### Rules Loader (`src/rules-loader.js`)
+
+```javascript
+import { loadRules, planChanges } from '../rules-loader.js';
+
+// Load rules from config hierarchy
+const rules = await loadRules({
+  database: 'My Database',  // For database-specific rules
+  rulesFile: 'custom.yaml', // Override with explicit file
+  noGlobal: false           // Skip global rules if true
+});
+
+// Plan changes without executing
+const { changes, summary } = planChanges(tags, rules);
+// changes: [{ action: 'merge'|'rename'|'delete', ... }]
+// summary: { merges: N, renames: N, deletes: N, totalAffectedRecords: N }
+```
+
+## Task Queue & Batch Operations
+
+The Queue System (`dt queue`) enables atomic batch operations, minimizing JXA overhead and managing large tasks effectively.
+
+### Queue Commands
+
+```bash
+# Add tasks to queue
+dt queue add create --name "Doc 1" --type markdown --database "Inbox"
+dt queue add move --uuid "UUID" --destination "/Archive"
+dt queue add tag.add --uuids "U1,U2" --tags "t1,t2"
+
+# View status
+dt queue status
+dt queue list
+
+# Verification & AI Repair
+dt queue verify             # Deep check against DEVONthink
+dt queue repair             # Consult AI for fixes
+dt queue repair --apply     # Apply AI fixes
+
+# Execute pending tasks (with automatic batch optimization)
+dt queue execute
+dt queue execute --dry-run
+dt queue execute --verbose
+
+# Manage
+dt queue clear --scope completed
+dt queue load tasks.json    # Load bulk tasks from file
+```
+
+### Queue Features
+
+1.  **Look-Ahead Optimization**: Consecutive compatible tasks (e.g., 50 `move` operations) are bundled into a single JXA call (`batchMove.js`), reducing execution time significantly.
+2.  **Dependencies**: Tasks can reference results of previous tasks using `$N.uuid` syntax.
+    ```yaml
+    - id: 1
+      action: create
+      params: { name: "Folder" }
+    - id: 2
+      action: move
+      params: { uuid: "old-doc", destination: "$1.uuid" } # Moves to new Folder
+    ```
+3.  **Persistence**: Queue state is saved to `~/.config/dt/queue.yaml`.
+4.  **Session Tracking**: Access history is logged to `~/.config/dt/state.yaml`.
+
+### Queue JXA Scripts (`jxa/write/batch*.js`)
+
+Specialized scripts handle batched operations:
+- `batchMove.js`: Moves multiple records to (potentially different) destinations.
+- `batchTag.js`: Adds, removes, or sets tags for multiple records.
+- `batchUpdate.js`: Updates properties (name, comment, label, etc.) for multiple records.
+- `batchDelete.js`: Deletes multiple records.
+
 ## Conventions
 
 - Commands output JSON by default (pretty-printed)
@@ -326,3 +515,5 @@ describe('my-command', () => {
 - Group paths can have optional leading slash: `/path/to/group` or `path/to/group`
 - Database is optional when group is specified by UUID (derived from group)
 - Use `-t/--tag` as repeatable option for adding tags
+- Config files use YAML format in `~/.config/dt/`
+- Use the helper function to prepare the UUIDs as sometimes user may provide it in the form of a `x-devonthink-item://` URL

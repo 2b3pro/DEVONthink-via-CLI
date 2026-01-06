@@ -1,6 +1,6 @@
 {
   "name": "devonthink-mcp",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Command-line and MCP interface for DEVONthink 4 on macOS",
   "type": "module",
   "main": "src/index.js",
@@ -31,7 +31,8 @@
   ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.1",
-    "commander": "^12.1.0"
+    "commander": "^12.1.0",
+    "yaml": "^2.8.2"
   },
   "files": [
     "bin/",

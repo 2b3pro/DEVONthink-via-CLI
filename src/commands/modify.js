@@ -7,6 +7,7 @@
 
 import { runJxa, requireDevonthink } from '../jxa-runner.js';
 import { print, printError } from '../output.js';
+import { addTasks } from '../queue.js';
 
 export function registerModifyCommand(program) {
   program
@@ -20,6 +21,7 @@ export function registerModifyCommand(program) {
     .option('-m, --move-to <pathOrUuid>', 'Move to destination group (path or UUID)')
     .option('-c, --comment <text>', 'Set comment')
     .option('--meta <key=value>', 'Set custom metadata (can be used multiple times)', collectKeyValue, {})
+    .option('--queue', 'Add task to the execution queue instead of running immediately')
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUID')
@@ -45,8 +47,6 @@ Modifiable properties are marked with their corresponding option flag.
     `)
     .action(async (uuid, options) => {
       try {
-        await requireDevonthink();
-
         // Build params
         const params = { uuid };
 
@@ -83,6 +83,14 @@ Modifiable properties are marked with their corresponding option flag.
         if (!hasModifications) {
           throw new Error('No modifications specified. Use --help to see available options.');
         }
+
+        if (options.queue) {
+          const result = await addTasks([{ action: 'modify', params }]);
+          print(result, options);
+          return;
+        }
+
+        await requireDevonthink();
 
         const result = await runJxa('write', 'modifyRecordProperties', [JSON.stringify(params)]);
         print(result, options);

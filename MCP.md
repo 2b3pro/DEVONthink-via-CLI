@@ -117,3 +117,8 @@ The server exposes the following tools to the AI:
 | `get_related_records` | Find backlinks, wiki links, similar items, or classify by data/tags. |
 | `organize_record` | Perform OCR, rename, and tag a record intelligently. |
 | `summarize_record` | Generate and save an AI summary of a record. |
+| `queue_tasks` | Add multiple tasks to the execution queue (batch processing). |
+| `execute_queue` | Run pending tasks in the queue (with optimization). |
+| `get_queue_status` | Check the status of the task queue. |
+| `verify_queue` | Perform a deep existence check of all resources in the queue. |
+| `repair_queue` | Use AI to fix and restructure an invalid or failed queue. |

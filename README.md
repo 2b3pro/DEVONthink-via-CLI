@@ -14,6 +14,9 @@ A unified command-line interface for DEVONthink 4 on macOS.
 This tool includes a **Model Context Protocol (MCP)** server, allowing **Claude Desktop** to search and read your DEVONthink database directly.
 👉 **[Read the Setup Guide (MCP.md)](MCP.md)**
 
+It also features a powerful **Batch & Queue System** for efficient bulk operations and optimized AI workflows.
+👉 **[Read the Batch System Guide (docs/BATCH-QUEUE.md)](docs/BATCH-QUEUE.md)**
+
 ## Installation
 
 ```bash
@@ -543,6 +546,25 @@ dt reveal <uuid> --parent
 # Aliases
 dt open <uuid>
 dt show <uuid>
+```
+
+### Queue Management (Batch)
+
+Manage the task queue for batched and atomic operations.
+
+```bash
+# Add tasks to queue
+dt queue add create --name "Doc 1" --type markdown --database "Inbox"
+dt queue add move --uuid "UUID" --destination "/Archive"
+
+# Check queue status
+dt queue status
+
+# Execute pending tasks (with automatic batch optimization)
+dt queue execute
+
+# Clear queue
+dt queue clear
 ```
 
 ### Batch Operations

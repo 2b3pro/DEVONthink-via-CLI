@@ -1,3 +1,8 @@
+---
+status: active
+keywords: [roadmap, planning, features, future]
+---
+
 # DEVONthink CLI: The "AI-OS" Evolution
 *Turning DEVONthink into the Long-Term Memory for AI Agents*
 

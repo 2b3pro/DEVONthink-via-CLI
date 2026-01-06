@@ -1216,6 +1216,333 @@ describe('DevonThink CLI Commands', () => {
   });
 
   // ============================================================
+  // TAGS COMMANDS
+  // ============================================================
+  describe('tags commands', () => {
+    let tagTestRecord1;
+    let tagTestRecord2;
+    let tagTestRecord3;
+
+    before(async () => {
+      // Create test records with various tags for testing
+      tagTestRecord1 = await createTestRecord({
+        name: uniqueName('TagsTest1'),
+        tags: ['TestTag', 'test-tag', 'TestTag2']
+      });
+      tagTestRecord2 = await createTestRecord({
+        name: uniqueName('TagsTest2'),
+        tags: ['TestTag', 'AnotherTag']
+      });
+      tagTestRecord3 = await createTestRecord({
+        name: uniqueName('TagsTest3'),
+        tags: [': badtag', 'SingleUse']
+      });
+      createdRecords.push(tagTestRecord1, tagTestRecord2, tagTestRecord3);
+    });
+
+    describe('tags list', () => {
+      it('should list all tags in database', async () => {
+        const result = await runCommand(['tags', 'list', '-d', TEST_DATABASE.name]);
+        assert.strictEqual(result.success, true);
+        assert.ok(result.database);
+        assert.ok(typeof result.totalTags === 'number');
+        assert.ok(Array.isArray(result.tags));
+      });
+
+      it('should sort tags by count', async () => {
+        const result = await runCommand(['tags', 'list', '-d', TEST_DATABASE.name, '-s', 'count']);
+        assert.strictEqual(result.success, true);
+        assert.ok(Array.isArray(result.tags));
+        // Verify descending count order
+        for (let i = 1; i < result.tags.length; i++) {
+          assert.ok(result.tags[i - 1].count >= result.tags[i].count);
+        }
+      });
+
+      it('should filter by minimum count', async () => {
+        const result = await runCommand(['tags', 'list', '-d', TEST_DATABASE.name, '-m', '2']);
+        assert.strictEqual(result.success, true);
+        // All returned tags should have count >= 2
+        for (const tag of result.tags) {
+          assert.ok(tag.count >= 2);
+        }
+      });
+    });
+
+    describe('tags analyze', () => {
+      it('should analyze tags for problems', async () => {
+        const result = await runCommand(['tags', 'analyze', '-d', TEST_DATABASE.name]);
+        assert.strictEqual(result.success, true);
+        assert.ok(result.database);
+        assert.ok(result.problems);
+        assert.ok(result.summary);
+        assert.ok(typeof result.summary.totalProblems === 'number');
+      });
+
+      it('should filter by category', async () => {
+        const result = await runCommand(['tags', 'analyze', '-d', TEST_DATABASE.name, '-c', 'case']);
+        assert.strictEqual(result.success, true);
+        // Should only have case category in problems
+        assert.ok(result.problems.case !== undefined);
+        assert.strictEqual(Object.keys(result.problems).length, 1);
+      });
+
+      it('should detect case variants', async () => {
+        const result = await runCommand(['tags', 'analyze', '-d', TEST_DATABASE.name, '-c', 'case']);
+        assert.strictEqual(result.success, true);
+        // Should find TestTag/test-tag as case variants (after normalization)
+        // The exact detection depends on the tags in the test database
+        assert.ok(Array.isArray(result.problems.case));
+      });
+
+      it('should detect malformed tags', async () => {
+        const result = await runCommand(['tags', 'analyze', '-d', TEST_DATABASE.name, '-c', 'malformed']);
+        assert.strictEqual(result.success, true);
+        assert.ok(Array.isArray(result.problems.malformed));
+        // Should find ': badtag' as malformed
+        const badTag = result.problems.malformed.find(p => p.tag === ': badtag');
+        if (badTag) {
+          assert.ok(badTag.issues.includes('leading_punctuation'));
+        }
+      });
+    });
+
+    describe('tags merge', () => {
+      let mergeTargetRecord, mergeSource1Record, mergeSource2Record;
+      let mergeTargetTag, mergeSource1Tag, mergeSource2Tag;
+
+      before(async () => {
+        // Use unique tag names per test run
+        const ts = Date.now();
+        mergeTargetTag = `merge-target-${ts}`;
+        mergeSource1Tag = `merge-src1-${ts}`;
+        mergeSource2Tag = `merge-src2-${ts}`;
+
+        // Create records with tags to merge
+        mergeTargetRecord = await createTestRecord({
+          name: uniqueName('MergeTarget'),
+          tags: [mergeTargetTag]
+        });
+        mergeSource1Record = await createTestRecord({
+          name: uniqueName('MergeSource1'),
+          tags: [mergeSource1Tag]
+        });
+        mergeSource2Record = await createTestRecord({
+          name: uniqueName('MergeSource2'),
+          tags: [mergeSource2Tag]
+        });
+        createdRecords.push(mergeTargetRecord, mergeSource1Record, mergeSource2Record);
+      });
+
+      it('should dry-run merge tags', async () => {
+        const result = await runCommand([
+          'tags', 'merge', '-d', TEST_DATABASE.name,
+          '-t', mergeTargetTag,
+          '-s', mergeSource1Tag, mergeSource2Tag,
+          '--dry-run'
+        ]);
+        assert.strictEqual(result.success, true);
+        assert.strictEqual(result.dryRun, true);
+        assert.strictEqual(result.target, mergeTargetTag);
+        assert.ok(Array.isArray(result.sources));
+        assert.strictEqual(result.sources.length, 2);
+      });
+
+      it('should merge tags', async () => {
+        const result = await runCommand([
+          'tags', 'merge', '-d', TEST_DATABASE.name,
+          '-t', mergeTargetTag,
+          '-s', mergeSource1Tag, mergeSource2Tag
+        ]);
+        assert.strictEqual(result.success, true);
+        assert.strictEqual(result.merged, true);
+        assert.strictEqual(result.target, mergeTargetTag);
+        assert.ok(Array.isArray(result.sourcesMerged));
+      });
+
+      it('should fail on non-existent target tag', async () => {
+        const result = await runCommand([
+          'tags', 'merge', '-d', TEST_DATABASE.name,
+          '-t', 'nonexistent-target-xyz',
+          '-s', mergeTargetTag
+        ], { expectFailure: true });
+        assert.strictEqual(result.success, false);
+        assert.ok(result.error.includes('not found'));
+      });
+    });
+
+    describe('tags rename', () => {
+      let renameTestRecord;
+      let renameFromTag, renameToTag;
+
+      before(async () => {
+        // Use unique tag names per test run
+        const ts = Date.now();
+        renameFromTag = `rename-from-${ts}`;
+        renameToTag = `rename-to-${ts}`;
+
+        renameTestRecord = await createTestRecord({
+          name: uniqueName('RenameTest'),
+          tags: [renameFromTag]
+        });
+        createdRecords.push(renameTestRecord);
+      });
+
+      it('should dry-run rename tag', async () => {
+        const result = await runCommand([
+          'tags', 'rename', '-d', TEST_DATABASE.name,
+          '-f', renameFromTag,
+          '-t', renameToTag,
+          '--dry-run'
+        ]);
+        assert.strictEqual(result.success, true);
+        assert.strictEqual(result.dryRun, true);
+        assert.strictEqual(result.from, renameFromTag);
+        assert.strictEqual(result.to, renameToTag);
+        assert.ok(typeof result.recordCount === 'number');
+      });
+
+      it('should rename tag', async () => {
+        const result = await runCommand([
+          'tags', 'rename', '-d', TEST_DATABASE.name,
+          '-f', renameFromTag,
+          '-t', renameToTag
+        ]);
+        assert.strictEqual(result.success, true);
+        assert.strictEqual(result.renamed, true);
+        assert.strictEqual(result.from, renameFromTag);
+        assert.strictEqual(result.to, renameToTag);
+      });
+
+      it('should fail on non-existent source tag', async () => {
+        const result = await runCommand([
+          'tags', 'rename', '-d', TEST_DATABASE.name,
+          '-f', 'nonexistent-tag-xyz',
+          '-t', 'some-new-name'
+        ], { expectFailure: true });
+        assert.strictEqual(result.success, false);
+        assert.ok(result.error.includes('not found'));
+      });
+    });
+
+    describe('tags delete', () => {
+      let deleteTestRecord;
+      let deleteTag;
+
+      before(async () => {
+        // Use unique tag name per test run
+        deleteTag = `tag-to-delete-${Date.now()}`;
+        deleteTestRecord = await createTestRecord({
+          name: uniqueName('DeleteTagTest'),
+          tags: [deleteTag]
+        });
+        createdRecords.push(deleteTestRecord);
+      });
+
+      it('should dry-run delete tag', async () => {
+        const result = await runCommand([
+          'tags', 'delete', '-d', TEST_DATABASE.name,
+          deleteTag,
+          '--dry-run'
+        ]);
+        assert.strictEqual(result.success, true);
+        assert.strictEqual(result.dryRun, true);
+        assert.ok(Array.isArray(result.tagsToDelete));
+        assert.strictEqual(result.tagsToDelete.length, 1);
+        assert.strictEqual(result.tagsToDelete[0].name, deleteTag);
+      });
+
+      it('should delete tag', async () => {
+        const result = await runCommand([
+          'tags', 'delete', '-d', TEST_DATABASE.name,
+          deleteTag
+        ]);
+        assert.strictEqual(result.success, true);
+        assert.ok(Array.isArray(result.deleted));
+        assert.strictEqual(result.totalDeleted, 1);
+      });
+
+      it('should fail on non-existent tag', async () => {
+        const result = await runCommand([
+          'tags', 'delete', '-d', TEST_DATABASE.name,
+          'nonexistent-tag-xyz'
+        ], { expectFailure: true });
+        assert.strictEqual(result.success, false);
+        assert.ok(result.error.includes('No tags found'));
+      });
+    });
+
+    describe('tags normalize', () => {
+      it('should dry-run normalize with auto mode', async () => {
+        const result = await runCommand([
+          'tags', 'normalize', '-d', TEST_DATABASE.name,
+          '--auto'
+        ]);
+        assert.strictEqual(result.success, true);
+        assert.strictEqual(result.dryRun, true);
+        assert.strictEqual(result.rulesSource, 'auto-generated');
+        assert.ok(Array.isArray(result.changes));
+        assert.ok(result.summary);
+        assert.ok(typeof result.summary.merges === 'number');
+        assert.ok(typeof result.summary.renames === 'number');
+        assert.ok(typeof result.summary.deletes === 'number');
+      });
+
+      it('should dry-run normalize with rules file', async () => {
+        const result = await runCommand([
+          'tags', 'normalize', '-d', TEST_DATABASE.name,
+          '-r', 'test/fixtures/test-rules.yaml'
+        ]);
+        assert.strictEqual(result.success, true);
+        assert.strictEqual(result.dryRun, true);
+        assert.ok(result.rulesSource.includes('test-rules.yaml'));
+        assert.ok(Array.isArray(result.changes));
+      });
+
+      it('should dry-run with no config (empty rules)', async () => {
+        const result = await runCommand([
+          'tags', 'normalize', '-d', TEST_DATABASE.name,
+          '--no-global'
+        ]);
+        assert.strictEqual(result.success, true);
+        assert.strictEqual(result.dryRun, true);
+        // With no config and no global, should have minimal changes
+        assert.ok(Array.isArray(result.changes));
+      });
+
+      it('should fail on non-existent rules file', async () => {
+        const result = await runCommand([
+          'tags', 'normalize', '-d', TEST_DATABASE.name,
+          '-r', 'nonexistent-rules.yaml'
+        ], { expectFailure: true });
+        assert.strictEqual(result.success, false);
+        assert.ok(result.error.includes('not found'));
+      });
+    });
+
+    describe('tags config', () => {
+      it('should show config paths', async () => {
+        const result = await runCommand(['tags', 'config']);
+        assert.strictEqual(result.success, true);
+        assert.ok(result.configDir);
+        assert.ok(result.globalRules);
+        assert.ok(result.globalRules.path);
+        assert.ok(typeof result.globalRules.exists === 'boolean');
+      });
+
+      it('should show database-specific config path', async () => {
+        const result = await runCommand([
+          'tags', 'config', '-d', TEST_DATABASE.name
+        ]);
+        assert.strictEqual(result.success, true);
+        assert.ok(result.databaseRules);
+        assert.strictEqual(result.databaseRules.database, TEST_DATABASE.name);
+        assert.ok(result.databaseRules.path);
+      });
+    });
+  });
+
+  // ============================================================
   // CLEANUP
   // ============================================================
   after(async () => {

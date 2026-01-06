@@ -7,6 +7,7 @@
 
 import { runJxa, requireDevonthink } from '../jxa-runner.js';
 import { print, printError } from '../output.js';
+import { trackRecordAccess } from '../state.js';
 
 function collectTags(value, previous) {
   return previous.concat([value]);
@@ -62,6 +63,17 @@ Available properties by category:
       try {
         await requireDevonthink();
         const result = await runJxa('read', 'getRecordProperties', [uuid]);
+        
+        if (result.success) {
+          await trackRecordAccess({
+            uuid: result.uuid,
+            name: result.name,
+            type: result.kind || result.recordType,
+            databaseName: result.database,
+            // databaseUuid not returned by getRecordProperties yet
+          }).catch(() => {});
+        }
+
         print(result, options);
         if (!result.success) process.exit(1);
       } catch (error) {
@@ -84,6 +96,15 @@ Available properties by category:
         await requireDevonthink();
         const maxChars = options.length || '3000';
         const result = await runJxa('read', 'getRecordPreview', [uuid, maxChars]);
+
+        if (result.success) {
+          await trackRecordAccess({
+            uuid: result.uuid,
+            name: result.name,
+            type: result.recordType,
+            // database info not returned
+          }).catch(() => {});
+        }
 
         if (options.quiet && result.success) {
           console.log(result.preview || '');

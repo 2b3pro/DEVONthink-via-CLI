@@ -8,6 +8,7 @@
 import { runJxa, requireDevonthink } from '../jxa-runner.js';
 import { print, printError } from '../output.js';
 import { readUuidsFromStdin, isStdinMarker } from '../utils.js';
+import { addTasks } from '../queue.js';
 
 export function registerMoveCommand(program) {
   program
@@ -17,13 +18,12 @@ export function registerMoveCommand(program) {
     .requiredOption('-t, --to <groupUuid>', 'Destination group (UUID or path with --database)')
     .option('-f, --from <groupUuid>', 'Source group UUID (for moving single instance in same database)')
     .option('-d, --database <nameOrUuid>', 'Database for path-based destination')
+    .option('--queue', 'Add task to the execution queue instead of running immediately')
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output moved record UUIDs')
     .action(async (uuids, options) => {
       try {
-        await requireDevonthink();
-
         // Read UUIDs from stdin if first arg is "-"
         let recordUuids = uuids;
         if (uuids.length === 1 && isStdinMarker(uuids[0])) {
@@ -32,6 +32,22 @@ export function registerMoveCommand(program) {
             throw new Error('No UUIDs received from stdin');
           }
         }
+
+        if (options.queue) {
+          const tasks = recordUuids.map(uuid => ({
+            action: 'move',
+            params: {
+              uuid,
+              destination: options.to,
+              database: options.database
+            }
+          }));
+          const result = await addTasks(tasks);
+          print(result, options);
+          return;
+        }
+
+        await requireDevonthink();
 
         const params = {
           records: recordUuids,

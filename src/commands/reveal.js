@@ -7,6 +7,7 @@
 
 import { runJxa, requireDevonthink } from '../jxa-runner.js';
 import { print, printError } from '../output.js';
+import { trackRecordAccess } from '../state.js';
 
 export function registerRevealCommand(program) {
   program
@@ -27,6 +28,15 @@ export function registerRevealCommand(program) {
         const mode = options.mode || 'window';
 
         const result = await runJxa('utils', 'revealRecord', [uuid, target, mode]);
+
+        if (result.success && result.revealed) {
+          await trackRecordAccess({
+            uuid: result.revealed.uuid,
+            name: result.revealed.name,
+            type: result.revealed.recordType,
+            databaseName: result.revealed.database
+          }).catch(() => {});
+        }
 
         if (!options.quiet) {
           print(result, options);

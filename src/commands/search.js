@@ -7,6 +7,21 @@
 
 import { runJxa, requireDevonthink } from '../jxa-runner.js';
 import { print, printError } from '../output.js';
+import { trackDatabaseAccess } from '../state.js';
+import { getDatabaseCache } from '../cache.js';
+
+async function trackDb(nameOrUuid) {
+  if (!nameOrUuid) return;
+  try {
+    const cache = await getDatabaseCache();
+    if (cache && cache.databases) {
+       const db = cache.databases.find(d => d.name === nameOrUuid || d.uuid === nameOrUuid);
+       if (db) {
+         await trackDatabaseAccess(db);
+       }
+    }
+  } catch (e) {}
+}
 
 export function registerSearchCommand(program) {
   const search = program
@@ -30,6 +45,8 @@ export function registerSearchCommand(program) {
     .action(async (query, options) => {
       try {
         await requireDevonthink();
+
+        await trackDb(options.database);
 
         const opts = {
           database: options.database || '',
@@ -63,6 +80,8 @@ export function registerSearchCommand(program) {
     .action(async (text, options) => {
       try {
         await requireDevonthink();
+        
+        await trackDb(options.database);
 
         const params = { type: 'comment', value: text };
         if (options.database) params.database = options.database;
@@ -89,6 +108,8 @@ export function registerSearchCommand(program) {
       try {
         await requireDevonthink();
 
+        await trackDb(options.database);
+
         const params = { type: 'hash', value: hash };
         if (options.database) params.database = options.database;
 
@@ -114,6 +135,8 @@ export function registerSearchCommand(program) {
       try {
         await requireDevonthink();
 
+        await trackDb(options.database);
+
         const params = { type: 'file', value: filename };
         if (options.database) params.database = options.database;
 
@@ -138,6 +161,8 @@ export function registerSearchCommand(program) {
     .action(async (path, options) => {
       try {
         await requireDevonthink();
+
+        await trackDb(options.database);
 
         const params = { type: 'path', value: path };
         if (options.database) params.database = options.database;
@@ -165,6 +190,8 @@ export function registerSearchCommand(program) {
       try {
         await requireDevonthink();
 
+        await trackDb(options.database);
+
         const params = { type: 'tags', value: tags };
         if (options.any) params.any = true;
         if (options.database) params.database = options.database;
@@ -190,6 +217,8 @@ export function registerSearchCommand(program) {
     .action(async (url, options) => {
       try {
         await requireDevonthink();
+
+        await trackDb(options.database);
 
         const params = { type: 'url', value: url };
         if (options.database) params.database = options.database;

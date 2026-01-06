@@ -1,0 +1,15 @@
+# Test rules file
+version: 1
+
+case:
+  strategy: lowercase
+
+merges:
+  - target: "test-tag"
+    sources: ["TestTag"]
+
+deletions:
+  - "SingleUse"
+
+preserve:
+  - "AnotherTag"

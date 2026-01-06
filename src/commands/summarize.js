@@ -7,6 +7,7 @@
 import { runJxa, requireDevonthink } from '../jxa-runner.js';
 import { print, printError } from '../output.js';
 import { readUuidsFromStdin, isStdinMarker } from '../utils.js';
+import { addTasks } from '../queue.js';
 
 export function registerSummarizeCommand(program) {
   program
@@ -18,17 +19,35 @@ export function registerSummarizeCommand(program) {
     .option('--native', 'Use DEVONthink native summarization (e.g. highlights)')
     .option('--type <type>', 'Native summary type: annotations, content, mentions', 'annotations')
     .option('--format <format>', 'Native output format: markdown, rich, sheet', 'markdown')
+    .option('--queue', 'Add task to the execution queue instead of running immediately')
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output the summary text or UUID')
     .action(async (uuids, options) => {
       try {
-        await requireDevonthink();
-
         let recordUuids = uuids;
         if (uuids.length === 1 && isStdinMarker(uuids[0])) {
           recordUuids = await readUuidsFromStdin();
         }
+
+        if (options.queue) {
+          const tasks = recordUuids.map(uuid => ({
+            action: 'summarize',
+            params: {
+              uuid,
+              prompt: options.prompt,
+              native: options.native,
+              type: options.type,
+              format: options.format,
+              save: !options.print
+            }
+          }));
+          const result = await addTasks(tasks);
+          print(result, options);
+          return;
+        }
+
+        await requireDevonthink();
 
         const results = [];
 

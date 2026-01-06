@@ -7,6 +7,7 @@
 
 import { runJxa, requireDevonthink } from '../jxa-runner.js';
 import { print, printError } from '../output.js';
+import { addTasks } from '../queue.js';
 
 const VALID_FORMATS = [
   'simple', 'plain', 'text',
@@ -25,13 +26,12 @@ export function registerConvertCommand(program) {
     .description('Convert a record to another format')
     .option('-t, --to <format>', `Target format: ${VALID_FORMATS.join(', ')}`, 'simple')
     .option('-g, --group <pathOrUuid>', 'Destination group (path or UUID)')
+    .option('--queue', 'Add task to the execution queue instead of running immediately')
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output converted record UUID')
     .action(async (uuid, options) => {
       try {
-        await requireDevonthink();
-
         const params = {
           uuid: uuid,
           to: options.to || 'simple'
@@ -40,6 +40,14 @@ export function registerConvertCommand(program) {
         if (options.group) {
           params.destGroupUuid = options.group;
         }
+
+        if (options.queue) {
+          const result = await addTasks([{ action: 'convert', params }]);
+          print(result, options);
+          return;
+        }
+
+        await requireDevonthink();
 
         const result = await runJxa('write', 'convertRecord', [JSON.stringify(params)]);
         print(result, options);

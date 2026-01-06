@@ -7,6 +7,7 @@
 
 import { runJxa } from '../jxa-runner.js';
 import { print, printError } from '../output.js';
+import { setDatabaseCache } from '../cache.js';
 
 export function registerStatusCommand(program) {
   program
@@ -18,6 +19,18 @@ export function registerStatusCommand(program) {
     .action(async (options) => {
       try {
         const result = await runJxa('utils', 'isRunning', []);
+
+        if (result.running) {
+          try {
+            // Silently refresh database cache
+            const dbs = await runJxa('read', 'listDatabases', []);
+            if (Array.isArray(dbs)) {
+              await setDatabaseCache(dbs);
+            }
+          } catch (e) {
+            // Ignore cache errors on status check
+          }
+        }
 
         if (!options.quiet) {
           print(result, options);

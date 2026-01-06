@@ -32,8 +32,10 @@ import { registerLinkCommand } from './commands/link.js';
 import { registerMcpCommand } from './commands/mcp.js';
 import { registerOrganizeCommand } from './commands/organize.js';
 import { registerSummarizeCommand } from './commands/summarize.js';
+import { registerTagsCommand } from './commands/tags.js';
+import { registerQueueCommand } from './commands/queue.js';
 
-const VERSION = '2.0.0-alpha.1';
+const VERSION = '2.2.0';
 
 export function createProgram() {
   const program = new Command();
@@ -76,6 +78,8 @@ export function createProgram() {
   registerMcpCommand(program);
   registerOrganizeCommand(program);
   registerSummarizeCommand(program);
+  registerTagsCommand(program);
+  registerQueueCommand(program);
 
   // Add completion command
   program
@@ -94,7 +98,7 @@ export function createProgram() {
 function generateCompletion(shell) {
   const commands = [
     'search', 'get', 'list', 'create', 'import', 'index', 'export', 'modify', 'update', 'delete',
-    'replicate', 'duplicate', 'move', 'merge', 'classify', 'group', 'reveal', 'batch', 'status', 'download', 'reading-list', 'convert', 'deconsolidate', 'transcribe', 'chat', 'link', 'unlink', 'mcp', 'organize', 'summarize', 'completion'
+    'replicate', 'duplicate', 'move', 'merge', 'classify', 'group', 'reveal', 'batch', 'status', 'download', 'reading-list', 'convert', 'deconsolidate', 'transcribe', 'chat', 'link', 'unlink', 'mcp', 'organize', 'summarize', 'tags', 'completion'
   ];
 
   const subcommands = {
@@ -109,7 +113,8 @@ function generateCompletion(shell) {
     chat: ['ask', 'models', 'capabilities'],
     mcp: ['run', 'config'],
     organize: [],
-    summarize: []
+    summarize: [],
+    tags: ['list', 'analyze', 'merge', 'rename', 'delete', 'normalize', 'config']
   };
 
   switch (shell) {

@@ -12,13 +12,24 @@ import {
   ListResourcesRequestSchema,
   ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
+import { createRequire } from 'module';
 import { runJxa } from "./jxa-runner.js";
 import { processRecord } from "./commands/organize.js";
+import { 
+  addTasks, 
+  executeQueue, 
+  getQueueStatus, 
+  clearQueue 
+} from "./queue.js";
+
+const require = createRequire(import.meta.url);
+const pkg = require('../package.json');
+
 
 const server = new Server(
   {
     name: "devonthink-mcp",
-    version: "2.0.0",
+    version: pkg.version,
   },
   {
     capabilities: {
@@ -32,6 +43,103 @@ const server = new Server(
  * Tool Definitions
  */
 const TOOLS = [
+  {
+    name: "queue_tasks",
+    description: `Add tasks to the execution queue for batch processing.
+Supported Actions & Params:
+- create: { name, type, content, database, group, tags }
+- move: { uuid, destination }
+- delete: { uuid }
+- tag.add: { uuids: [], tags: [] }
+- tag.remove: { uuids: [], tags: [] }
+- organize: { uuid, auto: true }
+- summarize: { uuid, save: true }
+Variables like "$1.uuid" can be used to reference results of previous tasks.`,
+    inputSchema: {
+      type: "object",
+      properties: {
+        tasks: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              action: { 
+                type: "string",
+                enum: [
+                  "create", "delete", "move", "modify", 
+                  "replicate", "duplicate", "convert",
+                  "tag.add", "tag.remove", "tag.merge", "tag.rename", "tag.delete",
+                  "link", "unlink", "organize", "summarize", "search"
+                ]
+              },
+              params: { type: "object" },
+              dependsOn: { type: "array", items: { type: "integer" } }
+            },
+            required: ["action", "params"]
+          }
+        },
+        options: {
+          type: "object",
+          properties: {
+            mode: { type: "string", enum: ["sequential", "parallel", "transactional"] },
+            verbose: { type: "boolean" }
+          }
+        }
+      },
+      required: ["tasks"]
+    }
+  },
+  {
+    name: "execute_queue",
+    description: "Execute all pending tasks in the queue.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        dryRun: { type: "boolean", description: "Validate only, don't execute" },
+        verbose: { type: "boolean", description: "If true, returns detailed result for every task. Default false (summary only)." },
+        mode: { type: "string", enum: ["sequential", "parallel", "transactional"] }
+      }
+    }
+  },
+  {
+    name: "get_queue_status",
+    description: "Get current queue status and task list.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        includeCompleted: { type: "boolean", default: false }
+      }
+    }
+  },
+  {
+    name: "clear_queue",
+    description: "Clear completed/failed tasks or entire queue.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        scope: { type: "string", enum: ["completed", "failed", "all"], default: "completed" }
+      }
+    }
+  },
+  {
+    name: "verify_queue",
+    description: "Perform a deep existence check of all resources referenced in the queue against DEVONthink.",
+    inputSchema: {
+      type: "object",
+      properties: {}
+    }
+  },
+  {
+    name: "repair_queue",
+    description: "Use AI to analyze and fix an invalid or failed task queue based on session context.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        apply: { type: "boolean", description: "Actually apply the fixes. Default false.", default: false },
+        engine: { type: "string", description: "AI engine to use. Default 'claude'." }
+      }
+    }
+  },
   {
     name: "search_records",
     description: "Search for records in DEVONthink using full-text or metadata filters.",
@@ -350,6 +458,39 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   try {
     switch (name) {
+      case "queue_tasks": {
+        const result = await addTasks(args.tasks, args.options);
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case "execute_queue": {
+        const result = await executeQueue(args);
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case "get_queue_status": {
+        const result = await getQueueStatus();
+        if (!args.includeCompleted) {
+           result.tasks = result.tasks.filter(t => t.status !== 'completed');
+        }
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case "clear_queue": {
+        await clearQueue(args.scope);
+        return { content: [{ type: "text", text: `Queue cleared (scope: ${args.scope || 'completed'})` }] };
+      }
+
+      case "verify_queue": {
+        const result = await verifyQueue();
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case "repair_queue": {
+        const result = await aiRepairQueue(args);
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
       case "search_records": {
         const result = await runJxa("read", "search", [
           args.query,

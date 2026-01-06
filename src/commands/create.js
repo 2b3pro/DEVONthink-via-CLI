@@ -10,6 +10,7 @@ import { print, printError } from '../output.js';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { readStdin, isStdinMarker } from '../utils.js';
+import { addTasks } from '../queue.js';
 
 export function registerCreateCommand(program) {
   const create = program
@@ -29,13 +30,12 @@ export function registerCreateCommand(program) {
     .option('-f, --file <path>', 'Read content from file')
     .option('-u, --url <url>', 'URL for bookmark records')
     .option('-t, --tag <tag>', 'Add tag (can be used multiple times)', collectTags, [])
+    .option('--queue', 'Add task to the execution queue instead of running immediately')
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUID of created record')
     .action(async (options) => {
       try {
-        await requireDevonthink();
-
         const params = {
           name: options.name,
           type: options.type,
@@ -68,6 +68,14 @@ export function registerCreateCommand(program) {
           params.tags = options.tag;
         }
 
+        if (options.queue) {
+          const result = await addTasks([{ action: 'create', params }]);
+          print(result, options);
+          return;
+        }
+
+        await requireDevonthink();
+
         const result = await runJxa('write', 'createRecord', [JSON.stringify(params)]);
         print(result, options);
 
@@ -92,13 +100,12 @@ export function registerCreateCommand(program) {
     .option('--agent <userAgent>', 'Custom user agent string')
     .option('--referrer <url>', 'HTTP referrer URL')
     .option('-t, --tag <tag>', 'Add tag (can be used multiple times)', collectTags, [])
+    .option('--queue', 'Add task to the execution queue instead of running immediately')
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUID of created record')
     .action(async (url, options) => {
       try {
-        await requireDevonthink();
-
         const params = { url };
 
         if (options.name) params.name = options.name;
@@ -108,6 +115,14 @@ export function registerCreateCommand(program) {
         if (options.agent) params.agent = options.agent;
         if (options.referrer) params.referrer = options.referrer;
         if (options.tag && options.tag.length > 0) params.tags = options.tag;
+
+        if (options.queue) {
+          const result = await addTasks([{ action: 'create', params: { ...params, type: 'markdown' } }]);
+          print(result, options);
+          return;
+        }
+
+        await requireDevonthink();
 
         const result = await runJxa('write', 'createMarkdownFrom', [JSON.stringify(params)]);
         print(result, options);
@@ -134,13 +149,12 @@ export function registerCreateCommand(program) {
     .option('--agent <userAgent>', 'Custom user agent string')
     .option('--referrer <url>', 'HTTP referrer URL')
     .option('-t, --tag <tag>', 'Add tag (can be used multiple times)', collectTags, [])
+    .option('--queue', 'Add task to the execution queue instead of running immediately')
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUID of created record')
     .action(async (url, options) => {
       try {
-        await requireDevonthink();
-
         const params = { url };
 
         if (options.name) params.name = options.name;
@@ -152,6 +166,14 @@ export function registerCreateCommand(program) {
         if (options.agent) params.agent = options.agent;
         if (options.referrer) params.referrer = options.referrer;
         if (options.tag && options.tag.length > 0) params.tags = options.tag;
+
+        if (options.queue) {
+          const result = await addTasks([{ action: 'create', params: { ...params, type: 'pdf' } }]);
+          print(result, options);
+          return;
+        }
+
+        await requireDevonthink();
 
         const result = await runJxa('write', 'createPdfFrom', [JSON.stringify(params)]);
         print(result, options);
@@ -177,13 +199,12 @@ export function registerCreateCommand(program) {
     .option('--agent <userAgent>', 'Custom user agent string')
     .option('--referrer <url>', 'HTTP referrer URL')
     .option('-t, --tag <tag>', 'Add tag (can be used multiple times)', collectTags, [])
+    .option('--queue', 'Add task to the execution queue instead of running immediately')
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUID of created record')
     .action(async (url, options) => {
       try {
-        await requireDevonthink();
-
         const params = { url };
 
         if (options.name) params.name = options.name;
@@ -193,6 +214,14 @@ export function registerCreateCommand(program) {
         if (options.agent) params.agent = options.agent;
         if (options.referrer) params.referrer = options.referrer;
         if (options.tag && options.tag.length > 0) params.tags = options.tag;
+
+        if (options.queue) {
+          const result = await addTasks([{ action: 'create', params: { ...params, type: 'webarchive' } }]);
+          print(result, options);
+          return;
+        }
+
+        await requireDevonthink();
 
         const result = await runJxa('write', 'createWebDocFrom', [JSON.stringify(params)]);
         print(result, options);
@@ -215,13 +244,12 @@ export function registerCreateCommand(program) {
     .requiredOption('-d, --database <nameOrUuid>', 'Target database (name or UUID)')
     .option('-g, --group <pathOrUuid>', 'Destination group (path or UUID)', '/')
     .option('-t, --tag <tag>', 'Add tag (can be used multiple times)', collectTags, [])
+    .option('--queue', 'Add task to the execution queue instead of running immediately')
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUID of created record')
     .action(async (url, options) => {
       try {
-        await requireDevonthink();
-
         const params = {
           name: options.name,
           type: 'bookmark',
@@ -233,6 +261,14 @@ export function registerCreateCommand(program) {
         if (options.tag && options.tag.length > 0) {
           params.tags = options.tag;
         }
+
+        if (options.queue) {
+          const result = await addTasks([{ action: 'create', params }]);
+          print(result, options);
+          return;
+        }
+
+        await requireDevonthink();
 
         const result = await runJxa('write', 'createRecord', [JSON.stringify(params)]);
         print(result, options);
@@ -253,7 +289,7 @@ export function registerCreateCommand(program) {
     .description('Generate an AI image from a text prompt')
     .requiredOption('-n, --name <title>', 'Record name for the image')
     .requiredOption('-d, --database <nameOrUuid>', 'Target database (name or UUID)')
-    .option('-g, --group <pathOrUuid>', 'Destination group (path or UUID)', '/')
+    .option('-g, --group <pathOrUuid>', 'Destination group (pathOrUuid)', '/')
     .option('-e, --engine <engine>', 'AI engine: dalle3, gpt-image-1, flux-schnell, flux-pro, flux-pro-ultra, stable-diffusion, recraft3, imagen')
     .option('-s, --size <size>', 'Image size (e.g., 1024x1024, 1344x768)')
     .option('--style <style>', 'Image style (engine-specific: natural, vivid, creative, raw, realistic_image, digital_illustration)')
@@ -262,13 +298,12 @@ export function registerCreateCommand(program) {
     .option('-i, --image <path>', 'Reference image for img2img (file path or URL)')
     .option('--prompt-strength <value>', 'Prompt vs image balance: 0.0 (image only) to 1.0 (prompt only)', parseFloat)
     .option('-t, --tag <tag>', 'Add tag (can be used multiple times)', collectTags, [])
+    .option('--queue', 'Add task to the execution queue instead of running immediately')
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUID of created record')
     .action(async (prompt, options) => {
       try {
-        await requireDevonthink();
-
         const params = {
           prompt,
           name: options.name,
@@ -296,6 +331,14 @@ export function registerCreateCommand(program) {
             params.imagePath = imagePath;
           }
         }
+
+        if (options.queue) {
+          const result = await addTasks([{ action: 'create', params: { ...params, type: 'image' } }]);
+          print(result, options);
+          return;
+        }
+
+        await requireDevonthink();
 
         const result = await runJxa('write', 'createAiImage', [JSON.stringify(params)]);
         print(result, options);

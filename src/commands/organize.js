@@ -7,6 +7,7 @@
 import { runJxa, requireDevonthink } from '../jxa-runner.js';
 import { print, printError } from '../output.js';
 import { readUuidsFromStdin, isStdinMarker } from '../utils.js';
+import { addTasks } from '../queue.js';
 
 export function registerOrganizeCommand(program) {
   program
@@ -20,19 +21,38 @@ export function registerOrganizeCommand(program) {
     .option('--prompt <uuid>', 'Use custom organization SOP/instructions from a record (for naming, tagging, etc.)')
     .option('--auto', 'Enable all enrichment features')
     .option('--no-confirm', 'Skip confirmation for renaming')
+    .option('--queue', 'Add task to the execution queue instead of running immediately')
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Minimal output')
     .action(async (uuids, options) => {
       try {
-        await requireDevonthink();
-
         // Handle stdin
         let recordUuids = uuids;
         if (uuids.length === 1 && isStdinMarker(uuids[0])) {
           recordUuids = await readUuidsFromStdin();
           if (recordUuids.length === 0) throw new Error('No UUIDs from stdin');
         }
+
+        if (options.queue) {
+          const tasks = recordUuids.map(uuid => ({
+            action: 'organize',
+            params: {
+              uuid,
+              ocr: options.ocr,
+              rename: options.rename,
+              tag: options.tag,
+              summarize: options.summarize,
+              prompt: options.prompt,
+              auto: options.auto
+            }
+          }));
+          const result = await addTasks(tasks);
+          print(result, options);
+          return;
+        }
+
+        await requireDevonthink();
 
         const results = [];
         
