@@ -17,7 +17,7 @@ export function registerOrganizeCommand(program) {
     .option('--rename', 'Rename based on content')
     .option('--tag', 'Apply AI tags')
     .option('--summarize', 'Add summary to comments')
-    .option('--prompt <uuid>', 'Use a custom prompt from a record (UUID)')
+    .option('--prompt <uuid>', 'Use custom organization SOP/instructions from a record (for naming, tagging, etc.)')
     .option('--auto', 'Enable all enrichment features')
     .option('--no-confirm', 'Skip confirmation for renaming')
     .option('--json', 'Output raw JSON')
