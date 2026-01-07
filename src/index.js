@@ -34,6 +34,7 @@ import { registerOrganizeCommand } from './commands/organize.js';
 import { registerSummarizeCommand } from './commands/summarize.js';
 import { registerTagsCommand } from './commands/tags.js';
 import { registerQueueCommand } from './commands/queue.js';
+import { registerSmartGroupCommand } from './commands/smartgroup.js';
 
 const VERSION = '2.2.0';
 
@@ -80,6 +81,7 @@ export function createProgram() {
   registerSummarizeCommand(program);
   registerTagsCommand(program);
   registerQueueCommand(program);
+  registerSmartGroupCommand(program);
 
   // Add completion command
   program
@@ -98,7 +100,7 @@ export function createProgram() {
 function generateCompletion(shell) {
   const commands = [
     'search', 'get', 'list', 'create', 'import', 'index', 'export', 'modify', 'update', 'delete',
-    'replicate', 'duplicate', 'move', 'merge', 'classify', 'group', 'reveal', 'batch', 'status', 'download', 'reading-list', 'convert', 'deconsolidate', 'transcribe', 'chat', 'link', 'unlink', 'mcp', 'organize', 'summarize', 'tags', 'completion'
+    'replicate', 'duplicate', 'move', 'merge', 'classify', 'group', 'reveal', 'batch', 'status', 'download', 'reading-list', 'convert', 'deconsolidate', 'transcribe', 'chat', 'link', 'unlink', 'mcp', 'organize', 'summarize', 'tags', 'smartgroup', 'completion'
   ];
 
   const subcommands = {
@@ -114,7 +116,8 @@ function generateCompletion(shell) {
     mcp: ['run', 'config'],
     organize: [],
     summarize: [],
-    tags: ['list', 'analyze', 'merge', 'rename', 'delete', 'normalize', 'config']
+    tags: ['list', 'analyze', 'merge', 'rename', 'delete', 'normalize', 'config'],
+    smartgroup: ['list', 'create', 'update', 'delete', 'items', 'delete-items', 'modify-items']
   };
 
   switch (shell) {
@@ -172,6 +175,10 @@ _dt_completions() {
             ;;
         mcp)
             COMPREPLY=( $(compgen -W "run config" -- ${cur}) )
+            return 0
+            ;;
+        smartgroup|sg)
+            COMPREPLY=( $(compgen -W "list create update delete items delete-items modify-items" -- \${cur}) )
             return 0
             ;;
         organize|tidy)
@@ -243,10 +250,11 @@ _dt() {
         'mcp:Model Context Protocol (MCP) server'
         'organize:Intelligently organize records'
         'summarize:Generate AI summary of record(s)'
+        'smartgroup:Manage smart groups'
         'completion:Generate shell completion script'
     )
 
-    local -a search_commands get_commands list_commands create_commands classify_commands batch_commands reading_list_commands chat_commands mcp_commands
+    local -a search_commands get_commands list_commands create_commands classify_commands batch_commands reading_list_commands chat_commands mcp_commands smartgroup_commands
 
     search_commands=(
         'query:Full-text search for records'
@@ -316,6 +324,16 @@ _dt() {
         'config:Display Claude Desktop config'
     )
 
+    smartgroup_commands=(
+        'list:List smart groups'
+        'create:Create a smart group'
+        'update:Update a smart group'
+        'delete:Delete a smart group'
+        'items:List smart group items'
+        'delete-items:Delete smart group items'
+        'modify-items:Modify smart group items'
+    )
+
     _arguments -C \\
         '1: :->command' \\
         '2: :->subcommand' \\
@@ -356,6 +374,9 @@ _dt() {
                     ;;
                 mcp)
                     _describe 'subcommand' mcp_commands
+                    ;;
+                smartgroup|sg)
+                    _describe 'subcommand' smartgroup_commands
                     ;;
             esac
             ;;
@@ -399,6 +420,7 @@ complete -c dt -f -n "__fish_use_subcommand" -a "unlink" -d "Unlink records or d
 complete -c dt -f -n "__fish_use_subcommand" -a "mcp" -d "Model Context Protocol (MCP) server"
 complete -c dt -f -n "__fish_use_subcommand" -a "organize" -d "Intelligently organize records"
 complete -c dt -f -n "__fish_use_subcommand" -a "summarize" -d "Generate AI summary of record(s)"
+complete -c dt -f -n "__fish_use_subcommand" -a "smartgroup" -d "Manage smart groups"
 complete -c dt -f -n "__fish_use_subcommand" -a "completion" -d "Generate shell completion"
 
 # search subcommands
@@ -411,6 +433,15 @@ complete -c dt -f -n "__fish_seen_subcommand_from chat" -a "capabilities" -d "Ge
 # mcp subcommands
 complete -c dt -f -n "__fish_seen_subcommand_from mcp" -a "run" -d "Run the MCP server"
 complete -c dt -f -n "__fish_seen_subcommand_from mcp" -a "config" -d "Display Claude Desktop config"
+
+# smartgroup subcommands
+complete -c dt -f -n "__fish_seen_subcommand_from smartgroup" -a "list" -d "List smart groups"
+complete -c dt -f -n "__fish_seen_subcommand_from smartgroup" -a "create" -d "Create a smart group"
+complete -c dt -f -n "__fish_seen_subcommand_from smartgroup" -a "update" -d "Update a smart group"
+complete -c dt -f -n "__fish_seen_subcommand_from smartgroup" -a "delete" -d "Delete a smart group"
+complete -c dt -f -n "__fish_seen_subcommand_from smartgroup" -a "items" -d "List smart group items"
+complete -c dt -f -n "__fish_seen_subcommand_from smartgroup" -a "delete-items" -d "Delete smart group items"
+complete -c dt -f -n "__fish_seen_subcommand_from smartgroup" -a "modify-items" -d "Modify smart group items"
 
 # completion subcommands
 complete -c dt -f -n "__fish_seen_subcommand_from completion" -a "bash zsh fish"

@@ -19,9 +19,11 @@ const VALID_ACTIONS = {
   'duplicate': ['uuid', 'destination'],
   'tag.add': ['uuids', 'tags'], // accepts uuid or uuids
   'tag.remove': ['uuids', 'tags'],
-  'tag.merge': ['target', 'sources', 'database'],
-  'tag.rename': ['from', 'to', 'database'],
-  'tag.delete': ['tag', 'database'],
+  'tag.set': ['uuids', 'tags'],
+  'tag.merge': ['target', 'sources'],
+  'tag.rename': ['from', 'to'],
+  'tag.delete': ['tag'],
+  'chat': ['prompt'],
   'link': ['source', 'target'],
   'unlink': ['source', 'target'],
   'convert': ['uuid', 'format'],
@@ -172,6 +174,8 @@ export async function validateQueue() {
       // Check for 'uuids' vs 'uuid' flexibility
       if (req === 'uuids' && task.params.uuid) continue; 
       if (req === 'uuid' && task.params.uuids) continue;
+      if (req === 'tag' && task.params.tags) continue;
+      if (req === 'prompt' && task.params.promptRecord) continue;
 
       if (task.params[req] === undefined) {
         // Check if it's a variable reference
@@ -341,26 +345,89 @@ async function executeTask(task, context) {
         break;
         
       case 'tag.add':
-        // params: uuids, tags
-        // JXA mergeTags/addTags? 
-        // We have 'updateRecord' which can handle tags? No, specifically 'modifyRecordProperties' handles tags.
-        // But 'tag.add' implies appending. 'modifyRecordProperties' replaces?
-        // We need a specific helper or reuse modify.
-        // Let's use 'modifyRecordProperties' but we need to fetch existing tags first?
-        // Better: Use a dedicated JXA or the new 'batchTag.js' we plan to write.
-        // For now, if single item:
-        if (Array.isArray(resolvedParams.uuids)) {
-           // TODO: Implement batch logic or loop
-           throw new Error("Batch tag.add not yet supported in non-batch mode");
+      case 'tag.remove':
+      case 'tag.set': {
+        const uuids = Array.isArray(resolvedParams.uuids)
+          ? resolvedParams.uuids
+          : (resolvedParams.uuid ? [resolvedParams.uuid] : []);
+
+        if (uuids.length === 0) {
+          throw new Error("Missing uuid(s) for tag operation");
         }
-        // Fallback to modify for single
-        // Actually, we don't have a 'addTag' JXA.
-        // Implementation hole! 
-        // Let's assume 'modifyRecordProperties' with { tags: [..., new] } logic?
-        // No, that's complex for the executor.
-        // We will defer 'tag.add' to the Batch Phase or implement a quick JXA now.
-        throw new Error(`Action '${action}' implementation pending`);
+
+        const items = uuids.map(uuid => ({
+          uuid,
+          tags: resolvedParams.tags,
+          operation: action.split('.')[1]
+        }));
+
+        result = await runJxa('write', 'batchTag', [JSON.stringify(items)]);
         break;
+      }
+
+      case 'tag.merge': {
+        const params = {
+          database: resolvedParams.database,
+          target: resolvedParams.target,
+          sources: resolvedParams.sources,
+          dryRun: resolvedParams.dryRun || false
+        };
+        result = await runJxa('write', 'mergeTags', [JSON.stringify(params)]);
+        break;
+      }
+
+      case 'tag.rename': {
+        const params = {
+          database: resolvedParams.database,
+          from: resolvedParams.from,
+          to: resolvedParams.to,
+          dryRun: resolvedParams.dryRun || false
+        };
+        result = await runJxa('write', 'renameTags', [JSON.stringify(params)]);
+        break;
+      }
+
+      case 'tag.delete': {
+        const tags = Array.isArray(resolvedParams.tags)
+          ? resolvedParams.tags
+          : (resolvedParams.tag ? [resolvedParams.tag] : []);
+        if (tags.length === 0) {
+          throw new Error("Missing tag(s) for tag.delete");
+        }
+        const params = {
+          database: resolvedParams.database,
+          tags,
+          dryRun: resolvedParams.dryRun || false
+        };
+        result = await runJxa('write', 'deleteTags', [JSON.stringify(params)]);
+        break;
+      }
+
+      case 'chat': {
+        if (!resolvedParams.prompt && !resolvedParams.promptRecord) {
+          throw new Error("Missing prompt or promptRecord for chat");
+        }
+
+        const params = {
+          prompt: resolvedParams.prompt,
+          promptRecord: resolvedParams.promptRecord,
+          records: resolvedParams.records,
+          url: resolvedParams.url,
+          engine: resolvedParams.engine,
+          model: resolvedParams.model,
+          temperature: resolvedParams.temperature,
+          role: resolvedParams.role,
+          mode: resolvedParams.mode,
+          usage: resolvedParams.usage,
+          format: resolvedParams.format
+        };
+
+        if (resolvedParams.thinking === false) params.thinking = false;
+        if (resolvedParams.toolCalls === false) params.toolCalls = false;
+
+        result = await runJxa('read', 'chat', [JSON.stringify(params)]);
+        break;
+      }
 
       case 'search':
          // Hidden action for intermediate steps?
@@ -468,25 +535,35 @@ export async function executeQueue(options = {}) {
       try {
         if (batch.length > 1) {
           // Resolve all params first
-          const batchItems = batch.map(t => {
-             const resolved = resolveParams(t.params, context);
-             // Standardize params for batch scripts
-             // move: { uuid, destination }
-             // delete: uuid (string) - wait, batchDelete takes array of strings
-             // tag.*: { uuid, tags, operation }
-             // modify: { uuid, properties: resolved }
-             
-             if (t.action === 'move') return { uuid: resolved.uuid, destination: resolved.destination };
-             if (t.action === 'delete') return resolved.uuid;
-             if (t.action.startsWith('tag.')) return { 
-                uuid: resolved.uuid, 
-                tags: resolved.tags, 
-                operation: t.action.split('.')[1] 
-             };
-             if (t.action === 'modify') return { uuid: resolved.uuid, properties: resolved };
-             
-             return resolved;
-          });
+          let batchItems = [];
+          for (const t of batch) {
+            const resolved = resolveParams(t.params, context);
+            // Standardize params for batch scripts
+            // move: { uuid, destination }
+            // delete: uuid (string)
+            // tag.*: { uuid, tags, operation }
+            // modify: { uuid, properties: resolved }
+            if (t.action === 'move') {
+              batchItems.push({ uuid: resolved.uuid, destination: resolved.destination });
+            } else if (t.action === 'delete') {
+              batchItems.push(resolved.uuid);
+            } else if (t.action.startsWith('tag.')) {
+              const uuids = Array.isArray(resolved.uuids)
+                ? resolved.uuids
+                : (resolved.uuid ? [resolved.uuid] : []);
+              uuids.forEach(uuid => {
+                batchItems.push({
+                  uuid,
+                  tags: resolved.tags,
+                  operation: t.action.split('.')[1]
+                });
+              });
+            } else if (t.action === 'modify') {
+              batchItems.push({ uuid: resolved.uuid, properties: resolved });
+            } else {
+              batchItems.push(resolved);
+            }
+          }
 
           // Run Batch JXA
           let batchResult;
@@ -649,6 +726,8 @@ export async function verifyQueue() {
     };
     if (params.uuid) checkUuid(params.uuid);
     if (params.uuids && Array.isArray(params.uuids)) params.uuids.forEach(checkUuid);
+    if (params.records && Array.isArray(params.records)) params.records.forEach(checkUuid);
+    if (params.promptRecord) checkUuid(params.promptRecord);
     
     // Check Databases
     if (params.database && !params.database.startsWith('$')) {

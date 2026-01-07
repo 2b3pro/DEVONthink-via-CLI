@@ -50,6 +50,18 @@ dt convert <uuid> --to pdf --queue
 
 # Add generic task (JSON output useful for scripting)
 dt queue add tag.add --uuids "U1,U2" --tags "important"
+
+# Tag maintenance actions
+dt queue add tag.merge --target "Correct" --sources "Wrong" "WRONG" --database "Research"
+dt queue add tag.rename --from "old-tag" --to "new-tag" --database "Research"
+dt queue add tag.delete --tag "temp" --database "Research"
+dt queue add tag.delete --tags "temp" "old" --database "Research"
+
+# Tags may also be passed as a single slash-delimited string (DEVONthink will split)
+dt queue add tag.add --uuids "U1,U2" --tags "tag1/tag2/tag number3"
+
+# Chat (use results in later steps with $N.response or $N)
+dt queue add chat --prompt "Summarize this" --records "ABCD-1234" --engine claude
 ```
 
 **Load from File**

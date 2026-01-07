@@ -37,6 +37,25 @@ DEVONthink 4 includes impressive built-in AI features, so why use `dt`?
 
 ---
 
+## MCP Server Configuration (Claude, Gemini, ...)
+
+```json
+  "mcpServers": {
+    "devonthink": {
+      "type": "stdio",
+      "command": "path-to-node",
+      "args": [
+        "path-to/devonthink-cli/bin/dt.js",
+        "mcp",
+        "run"
+      ],
+      "env": {
+        "DT_DEFAULT_DATABASE": "UUID-OF-YOUR-DATABASE"
+      }
+    }
+  }
+```
+
 ## 🤖 AI Integration (MCP)
 This tool includes a **Model Context Protocol (MCP)** server. When added to Claude Desktop, it allows the AI to:
 - **Research:** "Find all my notes on quantum computing from last month."
@@ -98,6 +117,9 @@ dt queue execute
 - `dt search`: High-speed full-text, tag, URL, or metadata search.
 - `dt get`: Retrieve props, text content, selection, or concordance.
 - `dt create`: Create records, markdown from URLs, or AI-generated images.
+- `dt smartgroup`: Create, update, list, and bulk-operate on smart groups.
+- `dt smartgroup delete-items "SG Tag Adult" -d "Test_Database"`: Delete all items in a smart group.
+- `dt smartgroup modify-items "SG Tag Adult" -d "Test_Database" --add-tag review`: Bulk tag smart group results.
 - `dt tags`: Advanced tag normalization, merging, and deduplication.
 
 ### Batch & Queue

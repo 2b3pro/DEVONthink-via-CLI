@@ -61,6 +61,9 @@ $DT search query 'created:>=2024-01-01 AND tags:research' --type markdown
 
 # Scope
 $DT search query 'tags:Funny' -d "My Database" -g "GROUP-UUID" --exclude-subgroups
+
+# Create a markdown record (content via -c)
+$DT create record -n "My Note" -d "Inbox" -c "# Note"
 ```
 
 ## CLI Time Flags
@@ -87,6 +90,37 @@ Values can be absolute dates (e.g. `2024-01-01`) or relative expressions
 }
 ```
 
+## Smart Groups
+
+Smart groups store a saved query. DEVONthink uses:
+
+- **Search group**: the scope group to search within
+- **Search predicates**: the query string (same syntax as CLI searches)
+
+You can use full boolean logic (including parentheses) in predicates.
+
+```bash
+dt create record -n "SG Tag Adult" -T "smart group" -d "Test_Database" --query 'tags:adult'
+dt create record -n "SG Complex" -T "smart group" -d "Test_Database" --query '(tags:adult OR tags:review) AND kind:pdf'
+```
+
+### Smart Group Management (CLI)
+
+```bash
+# List smart groups in root
+dt smartgroup list -d "Test_Database"
+
+# Create/update/delete smart groups
+dt smartgroup create -n "SG Tag Adult" -d "Test_Database" --query "tags:adult"
+dt smartgroup update "SG Tag Adult" -d "Test_Database" --query "tags:adult AND kind:pdf"
+dt smartgroup delete "SG Tag Adult" -d "Test_Database"
+
+# Operate on smart group items
+dt smartgroup items "SG Tag Adult" -d "Test_Database" --quiet
+dt smartgroup delete-items "SG Tag Adult" -d "Test_Database"
+dt smartgroup modify-items "SG Tag Adult" -d "Test_Database" --add-tag review
+```
+
 ## Notes
 
 - CLI options like `--database`, `--group`, `--exclude-subgroups`, and
@@ -94,3 +128,19 @@ Values can be absolute dates (e.g. `2024-01-01`) or relative expressions
 - The query string is passed as-is to DEVONthink, so you can combine
   full-text, boolean logic, prefixes, and ranges in one expression.
 - If you want only date filters, use a wildcard base query, e.g. `*`.
+
+---
+
+# Create Record UX Notes
+
+- `dt create record` defaults to markdown (omit `-T` for markdown).
+- `dt create note` is an alias for `dt create record`.
+- `dt create markdown <url>` is for web clipping (URL -> Markdown), not record creation.
+- Stdin for content uses `-c -` (no `--stdin` flag yet).
+- `--database` is optional when `--group` is a UUID; required when `--group` is a path.
+
+Example (stdin content):
+
+```bash
+echo "# Note" | dt create record -n "My Note" -d "Inbox" -c -
+```

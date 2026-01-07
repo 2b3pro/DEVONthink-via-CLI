@@ -5,6 +5,8 @@
 
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert';
+import fs from 'node:fs/promises';
+import { resolve } from 'node:path';
 import {
   runCommand,
   runCommandWithStdin,
@@ -332,6 +334,34 @@ describe('DevonThink CLI Commands', () => {
         createdRecords.push(result.uuid);
       });
 
+      it('should default to markdown type when omitted', async () => {
+        const name = uniqueName('CreateDefaultMarkdown');
+        const result = await runCommand([
+          'create', 'record',
+          '-n', name,
+          '-d', TEST_DATABASE.name,
+          '-c', 'Default markdown content'
+        ]);
+        assert.strictEqual(result.success, true);
+        createdRecords.push(result.uuid);
+
+        const props = await getRecordProps(result.uuid);
+        assert.strictEqual(props.type, 'markdown');
+      });
+
+      it('should support create note alias', async () => {
+        const name = uniqueName('CreateNote');
+        const result = await runCommand([
+          'create', 'note',
+          '-n', name,
+          '-d', TEST_DATABASE.name,
+          '-c', 'Note content'
+        ]);
+        assert.strictEqual(result.success, true);
+        assert.ok(result.uuid);
+        createdRecords.push(result.uuid);
+      });
+
       it('should create a record with tags', async () => {
         const name = uniqueName('TaggedCreate');
         const result = await runCommand([
@@ -381,6 +411,24 @@ describe('DevonThink CLI Commands', () => {
       it('should fail without required options', async () => {
         const result = await runCommand(['create', 'record', '-n', 'Test'], { expectFailure: true });
         assert.strictEqual(result.success, false);
+      });
+
+      it('should create a record with group UUID without database', async () => {
+        const groupName = uniqueName('CreateGroup');
+        const groupUuid = await createTestGroup(groupName);
+        createdRecords.push(groupUuid);
+
+        const name = uniqueName('CreateInGroup');
+        const result = await runCommand([
+          'create', 'record',
+          '-n', name,
+          '-T', 'markdown',
+          '-g', groupUuid,
+          '-c', 'Grouped content'
+        ]);
+        assert.strictEqual(result.success, true);
+        assert.ok(result.uuid);
+        createdRecords.push(result.uuid);
       });
     });
   });
@@ -1548,6 +1596,151 @@ describe('DevonThink CLI Commands', () => {
         assert.strictEqual(result.databaseRules.database, TEST_DATABASE.name);
         assert.ok(result.databaseRules.path);
       });
+    });
+  });
+
+  // ============================================================
+  // QUEUE TAG ACTIONS
+  // ============================================================
+  describe('queue tag actions', { concurrency: false }, () => {
+    const queueConfigDir = resolve(import.meta.dirname, 'tmp-config-queue');
+    const originalConfigDir = process.env.DT_CONFIG_DIR;
+
+    before(async () => {
+      process.env.DT_CONFIG_DIR = queueConfigDir;
+      await fs.rm(queueConfigDir, { recursive: true, force: true });
+    });
+
+    after(async () => {
+      await fs.rm(queueConfigDir, { recursive: true, force: true });
+      if (originalConfigDir === undefined) {
+        delete process.env.DT_CONFIG_DIR;
+      } else {
+        process.env.DT_CONFIG_DIR = originalConfigDir;
+      }
+    });
+
+    it('should apply tag.add via queue', async () => {
+      const tag = uniqueName('QueueTagAdd');
+      const recordUuid = await createTestRecord({
+        name: uniqueName('QueueTagAddRecord'),
+        tags: []
+      });
+      createdRecords.push(recordUuid);
+
+      const addResult = await runCommand([
+        'queue', 'add', 'tag.add',
+        '--uuid', recordUuid,
+        '--tags', tag
+      ]);
+      assert.strictEqual(addResult.success, true);
+
+      const execResult = await runCommand(['queue', 'execute']);
+      assert.strictEqual(execResult.success, true);
+
+      const props = await getRecordProps(recordUuid);
+      assert.ok(Array.isArray(props.tags));
+      assert.ok(props.tags.includes(tag));
+    });
+
+    it('should merge tags via queue', async () => {
+      const sourceTag = uniqueName('QueueTagSource');
+      const targetTag = uniqueName('QueueTagTarget');
+
+      const sourceRecord = await createTestRecord({
+        name: uniqueName('QueueTagSourceRecord'),
+        tags: [sourceTag]
+      });
+      const targetRecord = await createTestRecord({
+        name: uniqueName('QueueTagTargetRecord'),
+        tags: [targetTag]
+      });
+      createdRecords.push(sourceRecord, targetRecord);
+
+      const addResult = await runCommand([
+        'queue', 'add', 'tag.merge',
+        '--target', targetTag,
+        '--sources', sourceTag,
+        '--database', TEST_DATABASE.name
+      ]);
+      assert.strictEqual(addResult.success, true);
+
+      const execResult = await runCommand(['queue', 'execute']);
+      assert.strictEqual(execResult.success, true);
+
+      const sourceProps = await getRecordProps(sourceRecord);
+      const targetProps = await getRecordProps(targetRecord);
+
+      assert.ok(sourceProps.tags.includes(targetTag));
+      assert.ok(!sourceProps.tags.includes(sourceTag));
+      assert.ok(targetProps.tags.includes(targetTag));
+    });
+
+    it('should rename tags via queue', async () => {
+      const fromTag = uniqueName('QueueTagRenameFrom');
+      const toTag = uniqueName('QueueTagRenameTo');
+
+      const recordUuid = await createTestRecord({
+        name: uniqueName('QueueTagRenameRecord'),
+        tags: [fromTag]
+      });
+      createdRecords.push(recordUuid);
+
+      const addResult = await runCommand([
+        'queue', 'add', 'tag.rename',
+        '--from', fromTag,
+        '--to', toTag,
+        '--database', TEST_DATABASE.name
+      ]);
+      assert.strictEqual(addResult.success, true);
+
+      const execResult = await runCommand(['queue', 'execute']);
+      assert.strictEqual(execResult.success, true);
+
+      const props = await getRecordProps(recordUuid);
+      assert.ok(props.tags.includes(toTag));
+      assert.ok(!props.tags.includes(fromTag));
+    });
+
+    it('should delete tags via queue', async () => {
+      const deleteTag = uniqueName('QueueTagDelete');
+      const recordUuid = await createTestRecord({
+        name: uniqueName('QueueTagDeleteRecord'),
+        tags: [deleteTag]
+      });
+      createdRecords.push(recordUuid);
+
+      const addResult = await runCommand([
+        'queue', 'add', 'tag.delete',
+        '--tag', deleteTag,
+        '--database', TEST_DATABASE.name
+      ]);
+      assert.strictEqual(addResult.success, true);
+
+      const execResult = await runCommand(['queue', 'execute']);
+      assert.strictEqual(execResult.success, true);
+
+      const props = await getRecordProps(recordUuid);
+      assert.ok(!props.tags.includes(deleteTag));
+    });
+
+    it('should run chat via queue and store response', async () => {
+      const prompt = `Say hello from queue ${uniqueName('QueueChat')}`;
+
+      const addResult = await runCommand([
+        'queue', 'add', 'chat',
+        '--prompt', prompt
+      ]);
+      assert.strictEqual(addResult.success, true);
+
+      const execResult = await runCommand(['queue', 'execute']);
+      assert.strictEqual(execResult.success, true);
+
+      const status = await runCommand(['queue', 'status', '--all']);
+      const chatTask = status.tasks.find(t => t.action === 'chat' && t.status === 'completed');
+      assert.ok(chatTask);
+      assert.strictEqual(chatTask.result.success, true);
+      assert.ok(chatTask.result.response !== undefined);
     });
   });
 

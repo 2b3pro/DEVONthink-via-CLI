@@ -1,0 +1,30 @@
+version: 1
+id: q_1767745206514
+createdAt: 2026-01-07T00:20:06.514Z
+status: executing
+options:
+  mode: sequential
+  stopOnError: true
+  rollbackOnError: false
+  validateBeforeExecute: true
+  verbose: false
+tasks:
+  - id: 1
+    action: create
+    status: pending
+    params:
+      name: SG Tag Test
+      type: smart group
+      database: Test_Database
+      groupPath: /
+      query: tags:*
+    dependsOn: []
+    result: null
+    error: null
+    addedAt: 2026-01-07T00:20:06.518Z
+summary:
+  total: 1
+  pending: 1
+  completed: 0
+  failed: 0
+executionLog: []

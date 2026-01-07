@@ -20,7 +20,7 @@ if (!jsonArg) {
 } else {
   try {
     const params = JSON.parse(jsonArg);
-    const { name, type, database: databaseRef, groupPath, content, url, tags, query } = params;
+    const { name, type, database: databaseRef, groupPath, content, url, tags, query, searchGroup } = params;
 
     if (!name) throw new Error("Missing required field: name");
     if (!type) throw new Error("Missing required field: type");
@@ -70,13 +70,23 @@ if (!jsonArg) {
     // Smart Group requires query
     if (type === "smart group") {
       if (!query) throw new Error("Query required for smart group type");
-      createProps.searchQuery = query;
     }
 
     // Create record
     const record = app.createRecordWith(createProps, { in: destination });
 
     if (!record) throw new Error("Failed to create record");
+
+    // Ensure smart group query is applied (createRecordWith may ignore smart group properties)
+    if (type === "smart group" && query) {
+      try { record.searchPredicates = query; } catch (e) {}
+      if (searchGroup) {
+        try {
+          const scope = resolveGroup(app, searchGroup, db);
+          record.searchGroup = scope;
+        } catch (e) {}
+      }
+    }
 
     // Apply tags if specified
     if (tags && Array.isArray(tags) && tags.length > 0) {

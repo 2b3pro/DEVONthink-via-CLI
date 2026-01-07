@@ -197,14 +197,16 @@ executionLog: []
 | `duplicate` | `uuid`, `destination` |
 | `tag.add` | `uuids`, `tags` |
 | `tag.remove` | `uuids`, `tags` |
-| `tag.merge` | `target`, `sources`, `database` |
-| `tag.rename` | `from`, `to`, `database` |
-| `tag.delete` | `tag`, `database` |
+| `tag.set` | `uuids`, `tags` |
+| `tag.merge` | `target`, `sources` |
+| `tag.rename` | `from`, `to` |
+| `tag.delete` | `tag` or `tags` |
 | `link` | `source`, `target` |
 | `unlink` | `source`, `target` |
 | `convert` | `uuid`, `format` |
 | `organize` | `uuid` |
 | `summarize` | `uuid` |
+| `chat` | `prompt` or `promptRecord` |
 
 ---
 

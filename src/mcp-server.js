@@ -53,6 +53,11 @@ Supported Actions & Params:
 - delete: { uuid }
 - tag.add: { uuids: [], tags: [] }
 - tag.remove: { uuids: [], tags: [] }
+- tag.set: { uuids: [], tags: [] }
+- tag.merge: { target, sources, database? }
+- tag.rename: { from, to, database? }
+- tag.delete: { tag, database? }
+- chat: { prompt?, promptRecord?, records?, url?, engine?, model?, temperature?, role?, mode?, usage?, format?, thinking?, toolCalls? }
 - organize: { uuid, auto: true }
 - summarize: { uuid, save: true }
 Variables like "$1.uuid" can be used to reference results of previous tasks.`,
@@ -70,7 +75,7 @@ Variables like "$1.uuid" can be used to reference results of previous tasks.`,
                   "create", "delete", "move", "modify", 
                   "replicate", "duplicate", "convert",
                   "tag.add", "tag.remove", "tag.merge", "tag.rename", "tag.delete",
-                  "link", "unlink", "organize", "summarize", "search"
+                  "link", "unlink", "organize", "summarize", "search", "chat"
                 ]
               },
               params: { type: "object" },

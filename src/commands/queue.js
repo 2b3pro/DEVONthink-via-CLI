@@ -84,11 +84,34 @@ Examples:
     .option('--tags <tags...>', 'Tags (create/tag.add)')
     .option('--source <src>', 'Source (link)')
     .option('--target <target>', 'Target (link/tag.merge)')
+    .option('--sources <sources...>', 'Sources (tag.merge)')
+    .option('--from <name>', 'From (tag.rename)')
+    .option('--to <name>', 'To (tag.rename)')
+    .option('--tag <tag>', 'Tag (tag.delete)')
+    .option('--prompt <text>', 'Prompt (chat)')
+    .option('--prompt-record <uuid>', 'Prompt record (chat)')
+    .option('--records <uuids...>', 'Context records (chat)')
+    .option('--url <url>', 'Context URL (chat)')
+    .option('--engine <engine>', 'Chat engine')
+    .option('--model <model>', 'Chat model')
+    .option('--temperature <temp>', 'Chat temperature 0-2', parseFloat)
+    .option('--role <text>', 'Chat system role')
+    .option('--mode <mode>', 'Chat mode: auto, text, vision')
+    .option('--usage <mode>', 'Chat usage: cheapest, auto, best')
+    .option('--format <fmt>', 'Chat response format: text, json, html, message, raw')
+    .option('--no-thinking', 'Disable reasoning (chat)')
+    .option('--no-tools', 'Disable tool calls (chat)')
     .option('--json', 'Output raw JSON response')
     .addHelpText('after', `
 Examples:
   dt queue add create --name "Doc" --type markdown --database "Inbox"
   dt queue add move --uuid ABCD-1234 --destination "/Archive"
+  dt queue add tag.add --uuids "U1,U2" --tags "important"
+  dt queue add tag.merge --target "Correct" --sources "Wrong" "WRONG" --database "Research"
+  dt queue add tag.rename --from "old-tag" --to "new-tag" --database "Research"
+  dt queue add tag.delete --tag "temp" --database "Research"
+  dt queue add tag.delete --tags "temp" "old" --database "Research"
+  dt queue add chat --prompt "Summarize" --records "ABCD-1234" --engine claude
 `)
     .action(async (action, options) => {
       try {
@@ -104,6 +127,23 @@ Examples:
         if (options.tags) params.tags = options.tags;
         if (options.source) params.source = options.source;
         if (options.target) params.target = options.target;
+        if (options.sources) params.sources = options.sources;
+        if (options.from) params.from = options.from;
+        if (options.to) params.to = options.to;
+        if (options.tag) params.tag = options.tag;
+        if (options.prompt) params.prompt = options.prompt;
+        if (options.promptRecord) params.promptRecord = options.promptRecord;
+        if (options.records) params.records = options.records;
+        if (options.url) params.url = options.url;
+        if (options.engine) params.engine = options.engine;
+        if (options.model) params.model = options.model;
+        if (options.temperature !== undefined) params.temperature = options.temperature;
+        if (options.role) params.role = options.role;
+        if (options.mode) params.mode = options.mode;
+        if (options.usage) params.usage = options.usage;
+        if (options.format) params.format = options.format;
+        if (options.thinking === false) params.thinking = false;
+        if (options.tools === false) params.toolCalls = false;
 
         const task = { action, params };
         const result = await addTasks([task]);

@@ -15,7 +15,7 @@ npm install
 # Link globally (makes 'dt' available everywhere)
 npm link
 
-# Run tests (requires DEVONthink running with "Test_Database" open)
+# Run tests (requires DEVONthink running with "Test_Database" open) - Run targetted tests, unless entire suite is necessary
 npm test
 
 # Run with verbose output

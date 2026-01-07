@@ -9,7 +9,7 @@ import { runJxa, requireDevonthink } from '../jxa-runner.js';
 import { print, printError } from '../output.js';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { readStdin, isStdinMarker } from '../utils.js';
+import { readStdin, isStdinMarker, isUuid } from '../utils.js';
 import { addTasks } from '../queue.js';
 
 export function registerCreateCommand(program) {
@@ -21,14 +21,17 @@ export function registerCreateCommand(program) {
   create
     .command('record')
     .alias('new')
+    .alias('note')
     .description('Create a new record with properties')
     .requiredOption('-n, --name <title>', 'Record name/title')
-    .requiredOption('-T, --type <type>', 'Record type: markdown, txt, rtf, bookmark, html, group')
-    .requiredOption('-d, --database <nameOrUuid>', 'Target database (name or UUID)')
+    .option('-T, --type <type>', 'Record type: markdown, txt, rtf, bookmark, html, group', 'markdown')
+    .option('-d, --database <nameOrUuid>', 'Target database (name or UUID, required unless -g is a UUID)')
     .option('-g, --group <pathOrUuid>', 'Destination group (path or UUID)', '/')
     .option('-c, --content <text>', 'Content for text-based records (use - for stdin)')
     .option('-f, --file <path>', 'Read content from file')
     .option('-u, --url <url>', 'URL for bookmark records')
+    .option('--query <query>', 'Search query (smart group)')
+    .option('--search-group <pathOrUuid>', 'Search scope group (smart group)')
     .option('-t, --tag <tag>', 'Add tag (can be used multiple times)', collectTags, [])
     .option('--queue', 'Add task to the execution queue instead of running immediately')
     .option('--json', 'Output raw JSON')
@@ -37,16 +40,27 @@ export function registerCreateCommand(program) {
     .addHelpText('after', `
 Examples:
   dt create record -n "Note" -T markdown -d "Inbox" -c "# Title"
+  echo "# Note" | dt create record -n "My Note" -d "Inbox" -c -
   dt create record -n "Bookmark" -T bookmark -d "Inbox" -u "https://example.com"
+  dt create record -n "SG Tag Test" -T "smart group" -d "Test_Database" --query "tags:*"
 `)
     .action(async (options) => {
       try {
+        const groupRef = options.group || '/';
+        if (!options.database && !isUuid(groupRef)) {
+          throw new Error('Database (-d) is required unless group (-g) is a UUID');
+        }
+
         const params = {
           name: options.name,
           type: options.type,
           database: options.database,
-          groupPath: options.group || '/'
+          groupPath: groupRef
         };
+
+        if (options.type === 'smart group' && !options.query) {
+          throw new Error('Query is required for smart group type');
+        }
 
         if (options.file) {
           try {
@@ -67,6 +81,13 @@ Examples:
 
         if (options.url) {
           params.url = options.url;
+        }
+
+        if (options.query) {
+          params.query = options.query;
+        }
+        if (options.searchGroup) {
+          params.searchGroup = options.searchGroup;
         }
 
         if (options.tag && options.tag.length > 0) {
