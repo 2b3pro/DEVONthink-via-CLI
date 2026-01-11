@@ -13,7 +13,7 @@ export function registerModifyCommand(program) {
   program
     .command('modify <uuid>')
     .alias('mod')
-    .description('Set properties (metadata and attributes) of a record. The counterpart to "get props".')
+    .description('Set properties (metadata and attributes) of a record. The counterpart to "get props". To modify content, use `update`.')
     .option('-n, --name <newName>', 'Rename the record')
     .option('--add-tag <tag>', 'Add tag (can be used multiple times)', collectValues, [])
     .option('--remove-tag <tag>', 'Remove tag (can be used multiple times)', collectValues, [])

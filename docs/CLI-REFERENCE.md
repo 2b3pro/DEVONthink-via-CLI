@@ -274,6 +274,56 @@ dt list tag "urgent"
 dt list tag "project" -d "Research"
 ```
 
+#### `dt tree` — Display Folder Hierarchy
+
+Generate a visual tree of the database folder structure. Useful for LLM context injection, auditing, and documentation.
+
+| Option | Purpose | Default |
+|--------|---------|---------|
+| `[path]` | Start path (subtree) | / |
+| `-d, --database <name>` | Target database | current |
+| `--depth <n>` | Maximum depth | 10 |
+| `--counts` | Include item counts per folder | |
+| `--exclude-system` | Exclude system folders (_INBOX, Tags, Trash) | |
+| `--json` | JSON output with tree structure | |
+| `-q, --quiet` | Only output tree text | |
+
+```bash
+# Full tree of current database
+dt tree
+
+# Tree of specific database
+dt tree -d "Research"
+
+# Subtree from path, limited depth
+dt tree "/05—Education" --depth 2
+
+# With item counts
+dt tree --counts
+
+# Exclude system folders
+dt tree --exclude-system
+
+# JSON output for scripting
+dt tree -d "PAI Brain" --json
+```
+
+**Output (text):**
+```
+Research/
+├── 01—Health/
+│   ├── Projects/
+│   └── Reference/ (42)
+├── 05—Education/
+│   └── Papers/
+└── Annotations/
+```
+
+**Use cases:**
+- Inject folder structure into classification prompts
+- Audit folder organization
+- Generate folder documentation
+
 ---
 
 ### Create Commands
@@ -339,6 +389,8 @@ dt create image "A sunset over mountains" -d "Inbox"
 ### Modify & Update Commands
 
 #### `dt modify` — Set Record Properties
+
+Set metadata and attributes of a record (the counterpart to `get props`). To modify content, use `update`.
 
 | Option | Purpose | Default |
 |--------|---------|---------|
