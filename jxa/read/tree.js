@@ -14,6 +14,7 @@ try {
   const maxDepth = params.depth || 10;
   const includeCounts = params.counts === true;
   const excludeSystem = params.excludeSystem === true;
+  const includeSmartGroups = params.smartGroups === true;
   const jsonOutput = params.json === true;
 
   // System folders to optionally exclude
@@ -49,15 +50,17 @@ try {
       const child = children[i];
       const recordType = child.recordType();
 
-      if (recordType === "group") {
+      const isGroup = recordType === "group";
+      const isSmartGroup = recordType === "smart group";
+
+      if (isGroup || (includeSmartGroups && isSmartGroup)) {
         const name = child.name();
 
-        // Skip system folders if requested
-        if (excludeSystem && systemFolders.includes(name)) {
+        // Skip system folders if requested (only applies to regular groups)
+        if (excludeSystem && isGroup && systemFolders.includes(name)) {
           continue;
         }
 
-        const childTree = buildTree(child, currentDepth + 1);
         const node = {
           name: name,
           uuid: child.uuid(),
@@ -65,20 +68,30 @@ try {
           depth: currentDepth
         };
 
-        if (includeCounts) {
-          // Count non-group items in this group
-          const allChildren = child.children();
-          let count = 0;
-          for (let j = 0; j < allChildren.length; j++) {
-            if (allChildren[j].recordType() !== "group") {
-              count++;
-            }
-          }
-          node.itemCount = count;
+        // Mark smart groups
+        if (isSmartGroup) {
+          node.isSmartGroup = true;
         }
 
-        if (childTree && childTree.length > 0) {
-          node.children = childTree;
+        // Only recurse into regular groups (smart groups don't have children in the same way)
+        if (isGroup) {
+          const childTree = buildTree(child, currentDepth + 1);
+          if (childTree && childTree.length > 0) {
+            node.children = childTree;
+          }
+
+          if (includeCounts) {
+            // Count non-group items in this group
+            const allChildren = child.children();
+            let count = 0;
+            for (let j = 0; j < allChildren.length; j++) {
+              const childType = allChildren[j].recordType();
+              if (childType !== "group" && childType !== "smart group") {
+                count++;
+              }
+            }
+            node.itemCount = count;
+          }
         }
 
         subgroups.push(node);
@@ -103,7 +116,14 @@ try {
       const connector = last ? "└── " : "├── ";
       const childPrefix = last ? "    " : "│   ";
 
-      let line = prefix + connector + node.name + "/";
+      // Smart groups shown in brackets, regular groups with trailing slash
+      let line;
+      if (node.isSmartGroup) {
+        line = prefix + connector + "(" + node.name + ")";
+      } else {
+        line = prefix + connector + node.name + "/";
+      }
+
       if (includeCounts && node.itemCount > 0) {
         line += " (" + node.itemCount + ")";
       }

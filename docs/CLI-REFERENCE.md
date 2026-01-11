@@ -1,11 +1,11 @@
 ---
 title: DEVONthink CLI Reference
-version: 2.2.6
+version: 2.2.10
 updated: 2026-01-10
 description: CLI for DEVONthink 4. Search, import, organize, tag, transcribe, chat, and batch operations.
 ---
 
-# DEVONthink CLI Reference (v2.2.6)
+# DEVONthink CLI Reference (v2.2.10)
 
 > CLI and MCP interface for DEVONthink 4. Search records, import files, organize content, manage tags, transcribe media, AI chat, and batch operations.
 
@@ -294,6 +294,7 @@ Generate a visual tree of the database folder structure. Useful for LLM context 
 | `--depth <n>` | Maximum depth | 10 |
 | `--counts` | Include item counts per folder | |
 | `--exclude-system` | Exclude system folders (_INBOX, Tags, Trash) | |
+| `-s, --smart-groups` | Include smart groups (shown in brackets) | |
 | `--json` | JSON output with tree structure | |
 | `-q, --quiet` | Only output tree text | |
 
@@ -313,6 +314,9 @@ dt tree --counts
 # Exclude system folders
 dt tree --exclude-system
 
+# Include smart groups (shown in brackets)
+dt tree --smart-groups
+
 # JSON output for scripting
 dt tree -d "PAI Brain" --json
 ```
@@ -325,8 +329,12 @@ Research/
 │   └── Reference/ (42)
 ├── 05—Education/
 │   └── Papers/
-└── Annotations/
+├── Annotations/
+├── (All PDFs)
+└── (Recent Items)
 ```
+
+Smart groups appear in brackets `(Smart Group Name)` when `--smart-groups` is enabled.
 
 **Use cases:**
 - Inject folder structure into classification prompts

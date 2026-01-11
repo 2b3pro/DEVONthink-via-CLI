@@ -15,6 +15,7 @@ export function registerTreeCommand(program) {
     .option('--depth <n>', 'Maximum depth to traverse (default: 10)', '10')
     .option('--counts', 'Include item counts per folder')
     .option('--exclude-system', 'Exclude system folders (_INBOX, _TRIAGE, etc.)')
+    .option('-s, --smart-groups', 'Include smart groups in tree (shown in brackets)')
     .option('--json', 'Output raw JSON (includes tree structure)')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output tree text (no metadata)')
@@ -37,6 +38,7 @@ JSON Output:
         "path": "string",
         "depth": number,
         "itemCount": number,    // if --counts
+        "isSmartGroup": boolean, // if --smart-groups
         "children": [...]       // nested groups
       }
     ],
@@ -50,6 +52,7 @@ Examples:
   dt tree --depth 2                 # Limit to 2 levels
   dt tree --counts                  # Show item counts
   dt tree --exclude-system          # Hide _INBOX, _TRIAGE, etc.
+  dt tree --smart-groups            # Include smart groups: (Smart Group Name)
   dt tree -d "PAI Brain" --json     # JSON output for scripting
 
 Use Cases:
@@ -67,6 +70,7 @@ Use Cases:
           depth: parseInt(options.depth, 10) || 10,
           counts: options.counts || false,
           excludeSystem: options.excludeSystem || false,
+          smartGroups: options.smartGroups || false,
           json: options.json || false
         };
 
