@@ -501,6 +501,105 @@ describe('DevonThink CLI Commands', () => {
       const result = await runCommand(['modify', modifyTestUuid], { expectFailure: true });
       assert.strictEqual(result.success, false);
     });
+
+    it('should set label on a record', async () => {
+      const result = await runCommand(['modify', modifyTestUuid, '--label', '3']);
+      assert.strictEqual(result.success, true);
+      assert.strictEqual(result.operations.labelModified, true);
+      assert.strictEqual(result.newLabel, 3);
+
+      const props = await getRecordProps(modifyTestUuid);
+      assert.strictEqual(props.label, 3);
+    });
+
+    it('should set rating on a record', async () => {
+      const result = await runCommand(['modify', modifyTestUuid, '--rating', '4']);
+      assert.strictEqual(result.success, true);
+      assert.strictEqual(result.operations.ratingModified, true);
+      assert.strictEqual(result.newRating, 4);
+
+      const props = await getRecordProps(modifyTestUuid);
+      assert.strictEqual(props.rating, 4);
+    });
+
+    it('should set flag on a record', async () => {
+      const result = await runCommand(['modify', modifyTestUuid, '--flag']);
+      assert.strictEqual(result.success, true);
+      assert.strictEqual(result.operations.flagModified, true);
+      assert.strictEqual(result.newFlag, true);
+
+      const props = await getRecordProps(modifyTestUuid);
+      assert.strictEqual(props.flag, true);
+    });
+
+    it('should clear flag on a record', async () => {
+      const result = await runCommand(['modify', modifyTestUuid, '--no-flag']);
+      assert.strictEqual(result.success, true);
+      assert.strictEqual(result.operations.flagModified, true);
+      assert.strictEqual(result.newFlag, false);
+
+      const props = await getRecordProps(modifyTestUuid);
+      assert.strictEqual(props.flag, false);
+    });
+
+    it('should set aliases on a record', async () => {
+      const result = await runCommand(['modify', modifyTestUuid, '--aliases', 'alias1, alias2']);
+      assert.strictEqual(result.success, true);
+      assert.strictEqual(result.operations.aliasesModified, true);
+      assert.strictEqual(result.newAliases, 'alias1, alias2');
+
+      const props = await getRecordProps(modifyTestUuid);
+      assert.strictEqual(props.aliases, 'alias1, alias2');
+    });
+
+    it('should set URL on a bookmark record', async () => {
+      // Create a bookmark record specifically for URL testing
+      const bookmarkUuid = await createTestRecord({
+        name: uniqueName('URLTest'),
+        type: 'bookmark',
+        content: 'https://example.com/original'
+      });
+      createdRecords.push(bookmarkUuid);
+
+      const testUrl = 'https://example.com/updated';
+      const result = await runCommand(['modify', bookmarkUuid, '--url', testUrl]);
+      assert.strictEqual(result.success, true);
+      assert.strictEqual(result.operations.urlModified, true);
+      assert.strictEqual(result.newUrl, testUrl);
+
+      const props = await getRecordProps(bookmarkUuid);
+      assert.strictEqual(props.URL, testUrl);
+    });
+
+    it('should mark record as unread', async () => {
+      const result = await runCommand(['modify', modifyTestUuid, '--unread']);
+      assert.strictEqual(result.success, true);
+      assert.strictEqual(result.operations.unreadModified, true);
+      assert.strictEqual(result.newUnread, true);
+
+      const props = await getRecordProps(modifyTestUuid);
+      assert.strictEqual(props.unread, true);
+    });
+
+    it('should mark record as read', async () => {
+      const result = await runCommand(['modify', modifyTestUuid, '--no-unread']);
+      assert.strictEqual(result.success, true);
+      assert.strictEqual(result.operations.unreadModified, true);
+      assert.strictEqual(result.newUnread, false);
+
+      const props = await getRecordProps(modifyTestUuid);
+      assert.strictEqual(props.unread, false);
+    });
+
+    it('should reject invalid label value', async () => {
+      const result = await runCommand(['modify', modifyTestUuid, '--label', '8'], { expectFailure: true });
+      assert.strictEqual(result.success, false);
+    });
+
+    it('should reject invalid rating value', async () => {
+      const result = await runCommand(['modify', modifyTestUuid, '--rating', '6'], { expectFailure: true });
+      assert.strictEqual(result.success, false);
+    });
   });
 
   // ============================================================

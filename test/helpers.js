@@ -164,11 +164,17 @@ export async function createTestRecord(options = {}) {
         }
       }
 
-      const record = app.createRecordWith({
+      const recordProps = {
         name: "${name.replace(/"/g, '\\"')}",
-        type: "${type}",
-        content: ${JSON.stringify(content)}
-      }, { in: destination });
+        type: "${type}"
+      };
+      // Use URL for bookmark type, content for others
+      if ("${type}" === "bookmark") {
+        recordProps.URL = ${JSON.stringify(content)};
+      } else {
+        recordProps.content = ${JSON.stringify(content)};
+      }
+      const record = app.createRecordWith(recordProps, { in: destination });
 
       ${tags.length > 0 ? `record.tags = ${JSON.stringify(tags)};` : ''}
 
@@ -263,6 +269,8 @@ export async function getRecordProps(uuid) {
       if (!record) throw new Error("Record not found");
       let annotation = "";
       try { annotation = record.annotation() || ""; } catch {}
+      let url = "";
+      try { url = record.url() || ""; } catch {}
       JSON.stringify({
         success: true,
         uuid: record.uuid(),
@@ -271,7 +279,13 @@ export async function getRecordProps(uuid) {
         tags: record.tags(),
         comment: record.comment(),
         annotation: annotation,
-        location: record.location()
+        location: record.location(),
+        label: record.label(),
+        rating: record.rating(),
+        flag: record.flag(),
+        aliases: record.aliases(),
+        URL: url,
+        unread: record.unread()
       });
     } catch (e) {
       JSON.stringify({ success: false, error: e.message });

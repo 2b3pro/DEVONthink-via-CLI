@@ -16,7 +16,7 @@ if (!jsonArg) {
 } else {
   try {
     const params = JSON.parse(jsonArg);
-    const { uuid, newName, tagsAdd, tagsRemove, tagsReplace, destGroupUuid, comment, customMetadata } = params;
+    const { uuid, newName, tagsAdd, tagsRemove, tagsReplace, destGroupUuid, comment, customMetadata, label, rating, flag, aliases, url, unread } = params;
 
     if (!uuid) throw new Error("Missing required field: uuid");
 
@@ -81,6 +81,54 @@ if (!jsonArg) {
       record.customMetaData = merged;
       result.customMetadata = merged;
       result.operations.customMetadataModified = true;
+    }
+
+    // LABEL (0-7)
+    if (label !== undefined) {
+      result.previousLabel = record.label();
+      record.label = label;
+      result.newLabel = label;
+      result.operations.labelModified = true;
+    }
+
+    // RATING (0-5)
+    if (rating !== undefined) {
+      result.previousRating = record.rating();
+      record.rating = rating;
+      result.newRating = rating;
+      result.operations.ratingModified = true;
+    }
+
+    // FLAG (boolean)
+    if (flag !== undefined) {
+      result.previousFlag = record.flag();
+      record.flag = flag;
+      result.newFlag = flag;
+      result.operations.flagModified = true;
+    }
+
+    // ALIASES (wiki aliases)
+    if (aliases !== undefined) {
+      result.previousAliases = record.aliases() || "";
+      record.aliases = aliases;
+      result.newAliases = aliases;
+      result.operations.aliasesModified = true;
+    }
+
+    // URL (note: in JXA, the property is lowercase 'url', not 'URL')
+    if (url !== undefined) {
+      try { result.previousUrl = record.url() || ""; } catch { result.previousUrl = ""; }
+      record.url = url;
+      result.newUrl = url;
+      result.operations.urlModified = true;
+    }
+
+    // UNREAD (boolean)
+    if (unread !== undefined) {
+      result.previousUnread = record.unread();
+      record.unread = unread;
+      result.newUnread = unread;
+      result.operations.unreadModified = true;
     }
 
     // MOVE (destGroupUuid can be UUID or path)

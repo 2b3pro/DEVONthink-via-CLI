@@ -245,7 +245,7 @@ DEBUG=1 node bin/dt.js import file.pdf -d "Test"
 
 ## Testing
 
-**Before finalizing any command or feature, always write and run unit tests.**
+**Before finalizing any command or feature, always write and run unit tests.** Unless necessary, do targeted tests, so we're not running the whole suite.
 
 Tests require DEVONthink running with "Test_Database" open (UUID: `3DAB969D-B963-4056-ABE5-4990E2243F59`).
 
@@ -518,3 +518,9 @@ Specialized scripts handle batched operations:
 - Config files use YAML format in `~/.config/dt/`
 - Use the helper function to prepare the UUIDs as sometimes user may provide it in the form of a `x-devonthink-item://` URL
 - Applescript/JXA dictionary is here - refer to it often as it will save you time: `sdef /Applications/DEVONthink.app`
+
+## Updates
+
+- After any changes to commands, update the following:
+  - `docs/CLI-REFERENCE.md` and `README.md`
+  - `/Volumes/Xarismata/.config/pai/Infrastructure/DevonThink/cli-reference.md`

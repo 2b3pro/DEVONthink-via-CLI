@@ -20,30 +20,39 @@ export function registerModifyCommand(program) {
     .option('--set-tags <tags...>', 'Replace all tags with these')
     .option('-m, --move-to <pathOrUuid>', 'Move to destination group (path or UUID)')
     .option('-c, --comment <text>', 'Set comment')
+    .option('--label <number>', 'Set label index (0-7)', parseLabel)
+    .option('--rating <number>', 'Set rating (0-5)', parseRating)
+    .option('--flag', 'Set flagged status to true')
+    .option('--no-flag', 'Set flagged status to false')
+    .option('--aliases <text>', 'Set wiki aliases (comma or semicolon separated)')
+    .option('--url <url>', 'Set URL')
+    .option('--unread', 'Mark as unread')
+    .option('--no-unread', 'Mark as read')
     .option('--meta <key=value>', 'Set custom metadata (can be used multiple times)', collectKeyValue, {})
     .option('--queue', 'Add task to the execution queue instead of running immediately')
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUID')
     .addHelpText('after', `
-Modifiable properties are marked with their corresponding option flag.
+Modifiable properties and their corresponding option flags:
 
   Identity:
-    name (-n, --name), filename, path, location
+    name (-n, --name)
 
   Content & Type:
-    url, reference URL
+    url (--url)
 
   Organization & Metadata:
     tags (--add-tag, --remove-tag, --set-tags)
-    aliases
-    label
-    rating
+    aliases (--aliases)
+    label (--label 0-7)
+    rating (--rating 0-5)
     comment (-c, --comment)
     custom metadata (--meta)
 
   Status & Flags:
-    flag, unread, state, locked
+    flag (--flag / --no-flag)
+    unread (--unread / --no-unread)
     `)
     .addHelpText('after', `
 JSON Output:
@@ -100,6 +109,32 @@ Examples:
           params.customMetadata = options.meta;
         }
 
+        if (options.label !== undefined) {
+          params.label = options.label;
+        }
+
+        if (options.rating !== undefined) {
+          params.rating = options.rating;
+        }
+
+        // --flag and --no-flag are handled by Commander as options.flag (true/false/undefined)
+        if (options.flag !== undefined) {
+          params.flag = options.flag;
+        }
+
+        if (options.aliases !== undefined) {
+          params.aliases = options.aliases;
+        }
+
+        if (options.url !== undefined) {
+          params.url = options.url;
+        }
+
+        // --unread and --no-unread are handled by Commander as options.unread (true/false/undefined)
+        if (options.unread !== undefined) {
+          params.unread = options.unread;
+        }
+
         // Check if any modifications were specified
         const hasModifications = Object.keys(params).length > 1;
         if (!hasModifications) {
@@ -137,4 +172,20 @@ function collectKeyValue(value, previous) {
     previous[key] = rest.join('=');
   }
   return previous;
+}
+
+function parseLabel(value) {
+  const num = parseInt(value, 10);
+  if (isNaN(num) || num < 0 || num > 7) {
+    throw new Error('Label must be an integer between 0 and 7');
+  }
+  return num;
+}
+
+function parseRating(value) {
+  const num = parseInt(value, 10);
+  if (isNaN(num) || num < 0 || num > 5) {
+    throw new Error('Rating must be an integer between 0 and 5');
+  }
+  return num;
 }
