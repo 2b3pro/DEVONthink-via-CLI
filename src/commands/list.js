@@ -79,6 +79,7 @@ Examples:
     .command('group [target] [path]')
     .alias('folder')
     .description('List contents of a group/folder (by UUID or database/path)')
+    .option('-D, --depth <n>', 'Levels to traverse (1=direct children, -1=unlimited)', '1')
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Only output UUIDs')
@@ -89,14 +90,16 @@ JSON Output:
     "group": "string",
     "uuid": "string",
     "path": "string",
-    "itemCount": number,
+    "depth": number,
+    "totalItems": number,
     "items": [
       {
         "uuid": "string",
         "name": "string",
-        "recordType": "string",
-        "tags": ["string"],
-        "modificationDate": "string"
+        "type": "string",
+        "level": number,
+        "path": "string",
+        "itemCount": number  // groups only
       }
     ]
   }
@@ -104,30 +107,28 @@ JSON Output:
 Examples:
   dt list group "Research" "/Papers/2024"
   dt list group ABCD-1234 --quiet
+  dt list group ABCD-1234 --depth 3    # 3 levels deep
+  dt list group ABCD-1234 --depth -1   # Full tree
 `)
     .action(async (target, path, options) => {
       try {
         await requireDevonthink();
 
+        const depth = parseInt(options.depth, 10) || 1;
+
         // If target looks like a UUID (contains hyphens, long enough)
         const looksLikeUuid = target && target.includes('-') && target.length > 20;
-        const args = looksLikeUuid ? [target] : [target || '', path || '/'];
 
-        const result = await runJxa('read', 'listGroupContents', args);
-        
-        // Track access if successful and we have group info
-        // The JXA script returns list of children. It might not return group metadata.
-        // If we want to track the group, we might need to know which group it was.
-        // For now, let's skip tracking in 'list group' unless we update the JXA to return metadata too.
-        // Actually, if 'target' is a UUID, we can track it.
-        if (result.success && looksLikeUuid) {
-             // We'll track it as a group access. 
-             // Ideally we need name/path for the recent list, but we only have UUID here.
-             // We can defer or look it up. For now, let's track minimal info.
-             // Wait, state.js expects {uuid, name, path...}.
-             // If we don't have name, maybe we shouldn't track or track as "Unknown".
-             // Let's hold off on tracking here until we can get full metadata.
+        // Always use JSON mode for consistency
+        let params;
+        if (looksLikeUuid) {
+          params = { groupRef: target, depth };
+        } else {
+          // Database + path mode
+          params = { database: target || '', path: path || '/', depth };
         }
+
+        const result = await runJxa('read', 'listGroupContents', [JSON.stringify(params)]);
 
         print(result, options);
         if (!result.success) process.exit(1);

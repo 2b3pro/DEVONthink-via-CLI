@@ -249,8 +249,11 @@ dt list dbs --json
 | Option | Purpose | Default |
 |--------|---------|---------|
 | `[target]` | Database name or group UUID | |
-| `[path]` | Path within database | |
+| `[path]` | Path within database | / |
+| `-D, --depth <n>` | Levels to traverse (1=direct, -1=unlimited) | 1 |
 | `-q, --quiet` | Only output UUIDs | |
+
+Returns flat array with `level` field indicating nesting depth. Groups include `itemCount` (document count).
 
 ```bash
 # List by database and path
@@ -258,6 +261,12 @@ dt list group "Research" "/Papers/2024"
 
 # List by group UUID
 dt list group ABCD-1234
+
+# Recursive listing (2 levels deep)
+dt list group ABCD-1234 --depth 2
+
+# Full tree (all levels)
+dt list group "Research" "/" --depth -1
 ```
 
 #### `dt list inbox` — List Inbox Items

@@ -243,6 +243,11 @@ Variables like "$1.uuid" can be used to reference results of previous tasks.`,
       type: "object",
       properties: {
         uuid: { type: "string", description: "The UUID of the group" },
+        depth: {
+          type: "integer",
+          description: "Number of levels to traverse (default 1 = direct children only, -1 = unlimited). When depth > 1, returns flat array with 'level' field indicating nesting depth.",
+          default: 1
+        },
       },
       required: ["uuid"],
     },
@@ -590,7 +595,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case "list_group_contents": {
         const result = await runJxa("read", "listGroupContents", [
-          JSON.stringify({ groupRef: args.uuid })
+          JSON.stringify({ groupRef: args.uuid, depth: args.depth || 1 })
         ]);
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }

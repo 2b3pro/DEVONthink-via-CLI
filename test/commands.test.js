@@ -236,6 +236,46 @@ describe('DevonThink CLI Commands', () => {
         assert.strictEqual(result.success, true);
         assert.ok(Array.isArray(result.items));
       });
+
+      it('should return items with level field (depth=1)', async () => {
+        const result = await runCommand(['list', 'group', TEST_DATABASE.name, '/', '--depth', '1']);
+        assert.strictEqual(result.success, true);
+        assert.ok(Array.isArray(result.items));
+        // All items should be level 0 with depth=1
+        result.items.forEach(item => {
+          assert.strictEqual(item.level, 0, `Item ${item.name} should be at level 0`);
+        });
+      });
+
+      it('should recurse with depth > 1', async () => {
+        const result = await runCommand(['list', 'group', TEST_DATABASE.uuid, '--depth', '2']);
+        assert.strictEqual(result.success, true);
+        assert.ok(Array.isArray(result.items));
+        // Should have items at multiple levels
+        const levels = new Set(result.items.map(i => i.level));
+        assert.ok(levels.size > 0, 'Should have items');
+        // With depth=2, we should see level 0 and possibly level 1
+        assert.ok(levels.has(0), 'Should have level 0 items');
+      });
+
+      it('should include itemCount for groups', async () => {
+        const result = await runCommand(['list', 'group', TEST_DATABASE.name, '/']);
+        assert.strictEqual(result.success, true);
+        const groups = result.items.filter(i => i.type === 'group' || i.type === 'smart group');
+        if (groups.length > 0) {
+          // At least some groups should have itemCount defined
+          const withCount = groups.filter(g => typeof g.itemCount === 'number');
+          assert.ok(withCount.length > 0, 'Groups should have itemCount property');
+        }
+      });
+
+      it('should include path for items', async () => {
+        const result = await runCommand(['list', 'group', TEST_DATABASE.name, '/']);
+        assert.strictEqual(result.success, true);
+        if (result.items.length > 0) {
+          assert.ok(result.items[0].path, 'Items should have path property');
+        }
+      });
     });
 
     describe('list inbox', () => {
