@@ -153,3 +153,41 @@ Example:
   "fields": ["uuid", "name", "recordType", "parentUuid"]
 }
 ```
+
+### manage_record params
+
+**Actions:** `create`, `update`, `move`, `trash`, `convert`
+
+#### update action
+
+Update content and/or properties of a record:
+
+| Param | Type | Description |
+| :--- | :--- | :--- |
+| `uuid` | string | **Required.** Target record UUID |
+| `content` | string | New text content |
+| `contentMode` | string | `setting` (replace), `inserting` (after first line), `appending` (at end). Default: `setting` |
+| `name` | string | Rename the record |
+| `tags` | string[] | Replace all tags |
+| `addTags` | string[] | Tags to add |
+| `removeTags` | string[] | Tags to remove |
+| `comment` | string | Set comment |
+| `label` | number | Label index 0-7 |
+| `rating` | number | Rating 0-5 |
+| `flag` | boolean | Flagged status |
+| `aliases` | string | Wiki aliases (comma/semicolon separated) |
+| `unread` | boolean | Unread status |
+| `url` | string | URL property |
+| `customMetadata` | object | Key-value pairs for custom metadata |
+| `destination` | string | Move to group (UUID or path) |
+
+Example — append to content and add tags:
+```json
+{
+  "action": "update",
+  "uuid": "ABCD-1234",
+  "content": "\n\n---\nAppended note.",
+  "contentMode": "appending",
+  "addTags": ["reviewed", "2025"]
+}
+```

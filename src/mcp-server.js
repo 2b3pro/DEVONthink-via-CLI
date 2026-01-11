@@ -283,25 +283,39 @@ Variables like "$1.uuid" can be used to reference results of previous tasks.`,
     inputSchema: {
       type: "object",
       properties: {
-        action: { 
-          type: "string", 
+        action: {
+          type: "string",
           enum: ["create", "update", "move", "trash", "convert"],
           description: "The action to perform"
         },
         uuid: { type: "string", description: "Target record UUID (required for update, move, trash, convert)" },
         name: { type: "string", description: "Name/Title (create/update)" },
-        type: { 
-          type: "string", 
+        type: {
+          type: "string",
           enum: ["markdown", "txt", "rtf", "bookmark", "html", "group", "smart group"],
           description: "Record type (create only)",
           default: "markdown"
         },
-        content: { type: "string", description: "Text content (create)" },
+        content: { type: "string", description: "Text content (create/update)" },
+        contentMode: {
+          type: "string",
+          enum: ["setting", "inserting", "appending"],
+          description: "How to apply content: setting (replace), inserting (after first line), appending (at end). Default: setting",
+          default: "setting"
+        },
         database: { type: "string", description: "Target database (create)" },
         destination: { type: "string", description: "Destination group UUID or path (create/move)" },
         url: { type: "string", description: "URL (create bookmark/update)" },
-        tags: { type: "array", items: { type: "string" }, description: "Tags to set/add" },
+        tags: { type: "array", items: { type: "string" }, description: "Replace all tags with these (update)" },
+        addTags: { type: "array", items: { type: "string" }, description: "Tags to add (update)" },
+        removeTags: { type: "array", items: { type: "string" }, description: "Tags to remove (update)" },
         comment: { type: "string", description: "Comment to set" },
+        label: { type: "number", description: "Label index 0-7 (update)" },
+        rating: { type: "number", description: "Rating 0-5 (update)" },
+        flag: { type: "boolean", description: "Flagged status (update)" },
+        aliases: { type: "string", description: "Wiki aliases, comma/semicolon separated (update)" },
+        unread: { type: "boolean", description: "Unread status (update)" },
+        customMetadata: { type: "object", description: "Custom metadata key-value pairs (update)" },
         query: { type: "string", description: "Search query (create smart group)" },
         convertFormat: { type: "string", description: "Format to convert to (markdown, pdf, etc.)" }
       },
@@ -593,8 +607,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case "manage_record": {
-        const { action, uuid, name, type, content, database, destination, url, tags, comment, convertFormat, query } = args;
-        
+        const {
+          action, uuid, name, type, content, contentMode, database, destination,
+          url, tags, addTags, removeTags, comment, label, rating, flag,
+          aliases, unread, customMetadata, convertFormat, query
+        } = args;
+
         let scriptName;
         let scriptArgs = {};
 
@@ -613,19 +631,58 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             };
             break;
 
-          case "update":
-            scriptName = "modifyRecordProperties";
+          case "update": {
             if (!uuid) throw new Error("UUID is required for update action");
-            scriptArgs = {
-              uuid,
-              newName: name,
-              tagsReplace: tags, // Assuming 'tags' arg means "set these tags"
-              comment,
-              // If URL update is needed, modifyRecordProperties doesn't strictly handle it, 
-              // but we'll focus on metadata here. 
-              // To update content, we'd need updateRecord.js, but let's keep it simple for now.
-            };
-            break;
+
+            const results = [];
+
+            // Handle content update if content is provided
+            if (content !== undefined) {
+              const contentResult = await runJxa("write", "updateRecord", [JSON.stringify({
+                uuid,
+                text: content,
+                mode: contentMode || "setting",
+                target: "content"
+              })]);
+              results.push({ type: "content", ...contentResult });
+            }
+
+            // Handle property updates
+            const hasPropertyUpdates = name !== undefined || tags !== undefined ||
+              addTags?.length > 0 || removeTags?.length > 0 || comment !== undefined ||
+              label !== undefined || rating !== undefined || flag !== undefined ||
+              aliases !== undefined || url !== undefined || unread !== undefined ||
+              (customMetadata && Object.keys(customMetadata).length > 0) ||
+              destination !== undefined;
+
+            if (hasPropertyUpdates) {
+              const propsArgs = { uuid };
+              if (name !== undefined) propsArgs.newName = name;
+              if (tags !== undefined) propsArgs.tagsReplace = tags;
+              if (addTags?.length > 0) propsArgs.tagsAdd = addTags;
+              if (removeTags?.length > 0) propsArgs.tagsRemove = removeTags;
+              if (comment !== undefined) propsArgs.comment = comment;
+              if (label !== undefined) propsArgs.label = label;
+              if (rating !== undefined) propsArgs.rating = rating;
+              if (flag !== undefined) propsArgs.flag = flag;
+              if (aliases !== undefined) propsArgs.aliases = aliases;
+              if (url !== undefined) propsArgs.url = url;
+              if (unread !== undefined) propsArgs.unread = unread;
+              if (customMetadata) propsArgs.customMetadata = customMetadata;
+              if (destination !== undefined) propsArgs.destGroupUuid = destination;
+
+              const propsResult = await runJxa("write", "modifyRecordProperties", [JSON.stringify(propsArgs)]);
+              results.push({ type: "properties", ...propsResult });
+            }
+
+            if (results.length === 0) {
+              throw new Error("No updates specified. Provide content, name, tags, or other properties to update.");
+            }
+
+            // Return combined results
+            const finalResult = results.length === 1 ? results[0] : { success: results.every(r => r.success), updates: results };
+            return { content: [{ type: "text", text: JSON.stringify(finalResult, null, 2) }] };
+          }
 
           case "move":
              scriptName = "modifyRecordProperties";
