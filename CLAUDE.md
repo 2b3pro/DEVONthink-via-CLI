@@ -521,6 +521,6 @@ Specialized scripts handle batched operations:
 
 ## Updates
 
-- After any changes to commands, update the following:
+- After any changes, appropriately manage versioning and update the following:
   - `docs/CLI-REFERENCE.md` and `README.md`
   - `/Volumes/Xarismata/.config/pai/Infrastructure/DevonThink/cli-reference.md`

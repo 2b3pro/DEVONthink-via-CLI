@@ -37,20 +37,26 @@ describe('create record smart group', () => {
     assert.strictEqual(result.name, name);
     createdRecords.push(result.uuid);
 
+    // Smart groups use searchPredicates, not searchQuery (which is for window searches)
+    // Must find via children iteration since getRecordWithUuid can be unreliable for new records
     const queryResult = await runJxaScript(`
       ObjC.import("Foundation");
       try {
         const app = Application("DEVONthink");
-        const record = app.getRecordWithUuid("${result.uuid}");
-        if (!record) throw new Error("Record not found");
-        JSON.stringify({ success: true, query: record.searchQuery() });
+        const dbs = app.databases();
+        const db = dbs.find(d => d.name() === "${TEST_DATABASE.name}");
+        const root = db.root();
+        const children = root.children();
+        const sg = children.find(c => c.uuid() === "${result.uuid}");
+        if (!sg) throw new Error("Smart group not found");
+        JSON.stringify({ success: true, predicates: sg.searchPredicates() });
       } catch (e) {
         JSON.stringify({ success: false, error: e.message });
       }
     `);
 
     assert.strictEqual(queryResult.success, true);
-    assert.strictEqual(queryResult.query, query);
+    assert.strictEqual(queryResult.predicates, query);
   });
 
   it('should fail without query for smart group', async () => {

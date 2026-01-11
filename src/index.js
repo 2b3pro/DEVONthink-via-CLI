@@ -35,8 +35,11 @@ import { registerSummarizeCommand } from './commands/summarize.js';
 import { registerTagsCommand } from './commands/tags.js';
 import { registerQueueCommand } from './commands/queue.js';
 import { registerSmartGroupCommand } from './commands/smartgroup.js';
+import { registerTreeCommand } from './commands/tree.js';
+import { createRequire } from 'module';
 
-const VERSION = '2.2.0';
+const require = createRequire(import.meta.url);
+const { version: VERSION } = require('../package.json');
 
 export function createProgram() {
   const program = new Command();
@@ -82,6 +85,7 @@ export function createProgram() {
   registerTagsCommand(program);
   registerQueueCommand(program);
   registerSmartGroupCommand(program);
+  registerTreeCommand(program);
 
   // Add completion command
   program
@@ -100,7 +104,7 @@ export function createProgram() {
 function generateCompletion(shell) {
   const commands = [
     'search', 'get', 'list', 'create', 'import', 'index', 'export', 'modify', 'update', 'delete',
-    'replicate', 'duplicate', 'move', 'merge', 'classify', 'group', 'reveal', 'batch', 'status', 'download', 'reading-list', 'convert', 'deconsolidate', 'transcribe', 'chat', 'link', 'unlink', 'mcp', 'organize', 'summarize', 'tags', 'smartgroup', 'completion'
+    'replicate', 'duplicate', 'move', 'merge', 'classify', 'group', 'reveal', 'batch', 'status', 'download', 'reading-list', 'convert', 'deconsolidate', 'transcribe', 'chat', 'link', 'unlink', 'mcp', 'organize', 'summarize', 'tags', 'smartgroup', 'tree', 'completion'
   ];
 
   const subcommands = {

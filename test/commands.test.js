@@ -1860,6 +1860,67 @@ describe('DevonThink CLI Commands', () => {
   });
 
   // ============================================================
+  // TREE COMMAND
+  // ============================================================
+  describe('tree command', () => {
+    let testGroupUuid;
+
+    before(async () => {
+      testGroupUuid = await createTestGroup(uniqueName('TreeTest'));
+      createdRecords.push(testGroupUuid);
+    });
+
+    it('should display tree for database', async () => {
+      const result = await runCommand(['tree', '-d', TEST_DATABASE.name]);
+      assert.strictEqual(result.success, true);
+      assert.ok(result.database);
+      assert.ok(result.text);
+      assert.ok(Array.isArray(result.tree));
+    });
+
+    it('should respect depth limit', async () => {
+      const result = await runCommand(['tree', '-d', TEST_DATABASE.name, '--depth', '1']);
+      assert.strictEqual(result.success, true);
+      // With depth 1, no children should have children
+      for (const node of result.tree) {
+        assert.strictEqual(node.children, undefined);
+      }
+    });
+
+    it('should include item counts when requested', async () => {
+      const result = await runCommand(['tree', '-d', TEST_DATABASE.name, '--counts', '--depth', '2']);
+      assert.strictEqual(result.success, true);
+      // Find a group with items (Annotations typically has some)
+      const hasCount = result.tree.some(n => n.itemCount !== undefined);
+      assert.ok(hasCount || result.tree.length === 0);
+    });
+
+    it('should exclude system folders when requested', async () => {
+      const result = await runCommand(['tree', '-d', TEST_DATABASE.name, '--exclude-system']);
+      assert.strictEqual(result.success, true);
+      // Tags and Trash should not be present
+      const systemNames = ['Tags', 'Trash', '_INBOX', '_TRIAGE'];
+      for (const node of result.tree) {
+        assert.ok(!systemNames.includes(node.name), `Should not include ${node.name}`);
+      }
+    });
+
+    it('should handle path argument for subtree', async () => {
+      const result = await runCommand(['tree', '/Tags', '-d', TEST_DATABASE.name, '--depth', '1']);
+      assert.strictEqual(result.success, true);
+      assert.strictEqual(result.startPath, '/Tags');
+    });
+
+    it('should output text tree', async () => {
+      const result = await runCommand(['tree', '-d', TEST_DATABASE.name, '--depth', '1']);
+      assert.strictEqual(result.success, true);
+      assert.ok(result.text.includes(TEST_DATABASE.name));
+      // Should have tree characters
+      assert.ok(result.text.includes('├') || result.text.includes('└') || result.tree.length === 0);
+    });
+  });
+
+  // ============================================================
   // CLEANUP
   // ============================================================
   after(async () => {
