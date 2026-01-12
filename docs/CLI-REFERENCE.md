@@ -1,11 +1,11 @@
 ---
 title: DEVONthink CLI Reference
-version: 2.2.10
-updated: 2026-01-10
+version: 2.2.13
+updated: 2026-01-11
 description: CLI for DEVONthink 4. Search, import, organize, tag, transcribe, chat, and batch operations.
 ---
 
-# DEVONthink CLI Reference (v2.2.10)
+# DEVONthink CLI Reference (v2.2.13)
 
 > CLI and MCP interface for DEVONthink 4. Search records, import files, organize content, manage tags, transcribe media, AI chat, and batch operations.
 
@@ -524,6 +524,29 @@ dt index "/path/to/folder" -d "Research"
 
 # Index single file
 dt index "/path/to/file.pdf" -d "Research" -g "/References"
+```
+
+#### `dt download markdown` — Create Markdown from Web URL
+
+| Option | Purpose | Default |
+|--------|---------|---------|
+| `<url>` | Web URL to download | |
+| `-d, --database <name>` | Target database | |
+| `-g, --to <pathOrUuid>` | Destination group | |
+| `-n, --name <name>` | Custom name | |
+| `--readability` | Declutter page (reader mode) | |
+| `-a, --agent <agent>` | User agent string | |
+| `-r, --referrer <url>` | HTTP referrer | |
+
+```bash
+# Basic markdown from URL
+dt download markdown "https://example.com/article" -d "Research"
+
+# With readability (clean, uncluttered content)
+dt download md "https://example.com/article" --readability -d "Inbox"
+
+# Custom name
+dt download markdown "https://example.com" -n "My Article" -d "Research" --readability
 ```
 
 ---

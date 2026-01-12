@@ -117,6 +117,7 @@ dt queue execute
 - `dt search`: High-speed full-text, tag, URL, or metadata search.
 - `dt get`: Retrieve props, filepath, dbpath, text content, selection, or concordance.
 - `dt create`: Create records, markdown from URLs, or AI-generated images.
+- `dt download markdown`: Create clean markdown from web URLs (with readability/declutter mode).
 - `dt tree`: Display folder hierarchy as ASCII tree (for LLM context injection, auditing).
 - `dt smartgroup`: Create, update, list, and bulk-operate on smart groups.
 - `dt smartgroup delete-items "SG Tag Adult" -d "Test_Database"`: Delete all items in a smart group.

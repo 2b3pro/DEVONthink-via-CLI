@@ -261,4 +261,51 @@ Examples:
         process.exit(1);
       }
     });
+
+  // dt download markdown <url> - Create markdown from URL
+  download
+    .command('markdown <url>')
+    .alias('md')
+    .description('Create a Markdown document from a web URL (with optional readability/declutter)')
+    .option('-d, --database <name>', 'Target database')
+    .option('-g, --to <pathOrUuid>', 'Destination group (path or UUID)')
+    .option('-n, --name <name>', 'Custom name for the record')
+    .option('-r, --referrer <url>', 'HTTP referrer URL')
+    .option('-a, --agent <agent>', 'User agent string')
+    .option('--readability', 'Declutter page layout (reader mode)')
+    .option('--json', 'Output raw JSON')
+    .option('--pretty', 'Pretty print JSON output')
+    .option('-q, --quiet', 'Only output UUID of created record')
+    .addHelpText('after', `
+Examples:
+  dt download markdown "https://example.com/article" -d "Research"
+  dt download md "https://example.com/article" --readability -g "/Inbox"
+  dt download markdown "https://example.com" -n "My Article" --readability
+`)
+    .action(async (url, options) => {
+      try {
+        await requireDevonthink();
+
+        const params = { url };
+        if (options.database) params.database = options.database;
+        if (options.to) params.groupPath = options.to;
+        if (options.name) params.name = options.name;
+        if (options.referrer) params.referrer = options.referrer;
+        if (options.agent) params.agent = options.agent;
+        if (options.readability) params.readability = true;
+
+        const result = await runJxa('write', 'createMarkdownFrom', [JSON.stringify(params)]);
+
+        if (options.quiet && result.success) {
+          console.log(result.uuid);
+        } else {
+          print(result, options);
+        }
+
+        if (!result.success) process.exit(1);
+      } catch (error) {
+        printError(error, options);
+        process.exit(1);
+      }
+    });
 }

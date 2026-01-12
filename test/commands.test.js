@@ -1961,6 +1961,65 @@ describe('DevonThink CLI Commands', () => {
   });
 
   // ============================================================
+  // DOWNLOAD COMMANDS
+  // ============================================================
+  describe('download commands', () => {
+    describe('download markdown', () => {
+      it('should create markdown from URL', async () => {
+        const result = await runCommand([
+          'download', 'markdown', 'https://example.com',
+          '-d', TEST_DATABASE.name
+        ]);
+        assert.strictEqual(result.success, true);
+        assert.ok(result.uuid);
+        assert.strictEqual(result.recordType, 'markdown');
+        assert.strictEqual(result.sourceUrl, 'https://example.com');
+        createdRecords.push(result.uuid);
+      });
+
+      it('should support readability mode', async () => {
+        const result = await runCommand([
+          'download', 'markdown', 'https://example.com',
+          '-d', TEST_DATABASE.name,
+          '--readability'
+        ]);
+        assert.strictEqual(result.success, true);
+        assert.ok(result.uuid);
+        createdRecords.push(result.uuid);
+      });
+
+      it('should support custom name', async () => {
+        const customName = uniqueName('CustomMD');
+        const result = await runCommand([
+          'download', 'markdown', 'https://example.com',
+          '-d', TEST_DATABASE.name,
+          '-n', customName
+        ]);
+        assert.strictEqual(result.success, true);
+        assert.strictEqual(result.name, customName);
+        createdRecords.push(result.uuid);
+      });
+
+      it('should fail for invalid URL', async () => {
+        const result = await runCommand([
+          'download', 'markdown', 'not-a-url',
+          '-d', TEST_DATABASE.name
+        ], { expectFailure: true });
+        assert.strictEqual(result.success, false);
+      });
+
+      it('should work with md alias', async () => {
+        const result = await runCommand([
+          'download', 'md', 'https://example.com',
+          '-d', TEST_DATABASE.name
+        ]);
+        assert.strictEqual(result.success, true);
+        createdRecords.push(result.uuid);
+      });
+    });
+  });
+
+  // ============================================================
   // CLEANUP
   // ============================================================
   after(async () => {
