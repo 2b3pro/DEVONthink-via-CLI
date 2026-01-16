@@ -640,6 +640,64 @@ describe('DevonThink CLI Commands', () => {
       const result = await runCommand(['modify', modifyTestUuid, '--rating', '6'], { expectFailure: true });
       assert.strictEqual(result.success, false);
     });
+
+    it('should modify multiple records via arguments', async () => {
+      // Create two test records
+      const uuid1 = await createTestRecord({ name: uniqueName('BatchMod1') });
+      const uuid2 = await createTestRecord({ name: uniqueName('BatchMod2') });
+      createdRecords.push(uuid1, uuid2);
+
+      const result = await runCommand(['modify', uuid1, uuid2, '--add-tag', 'batch-test-tag']);
+      assert.strictEqual(result.success, true);
+      assert.strictEqual(result.count, 2);
+      assert.strictEqual(result.modified.length, 2);
+
+      // Verify both records have the tag
+      const props1 = await getRecordProps(uuid1);
+      const props2 = await getRecordProps(uuid2);
+      assert.ok(props1.tags.includes('batch-test-tag'));
+      assert.ok(props2.tags.includes('batch-test-tag'));
+    });
+
+    it('should modify multiple records via stdin', async () => {
+      // Create two test records
+      const uuid1 = await createTestRecord({ name: uniqueName('StdinMod1') });
+      const uuid2 = await createTestRecord({ name: uniqueName('StdinMod2') });
+      createdRecords.push(uuid1, uuid2);
+
+      const stdinInput = `${uuid1}\n${uuid2}`;
+      const result = await runCommandWithStdin(
+        ['modify', '-', '--add-tag', 'stdin-test-tag'],
+        stdinInput
+      );
+
+      assert.strictEqual(result.success, true);
+      assert.strictEqual(result.count, 2);
+      assert.strictEqual(result.modified.length, 2);
+
+      // Verify both records have the tag
+      const props1 = await getRecordProps(uuid1);
+      const props2 = await getRecordProps(uuid2);
+      assert.ok(props1.tags.includes('stdin-test-tag'));
+      assert.ok(props2.tags.includes('stdin-test-tag'));
+    });
+
+    it('should report partial success for batch modify', async () => {
+      // Create one valid record
+      const validUuid = await createTestRecord({ name: uniqueName('ValidMod') });
+      createdRecords.push(validUuid);
+
+      const invalidUuid = 'INVALID-UUID-12345';
+      const result = await runCommand(
+        ['modify', validUuid, invalidUuid, '--add-tag', 'partial-test'],
+        { expectFailure: true }
+      );
+
+      assert.strictEqual(result.success, false);
+      assert.strictEqual(result.count, 1);
+      assert.strictEqual(result.errors.length, 1);
+      assert.strictEqual(result.errors[0].uuid, invalidUuid);
+    });
   });
 
   // ============================================================

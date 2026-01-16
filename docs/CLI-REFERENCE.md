@@ -407,11 +407,11 @@ dt create image "A sunset over mountains" -d "Inbox"
 
 #### `dt modify` — Set Record Properties
 
-Set metadata and attributes of a record (the counterpart to `get props`). To modify content, use `update`.
+Set metadata and attributes of record(s). Supports multiple UUIDs and stdin input. Counterpart to `get props`. To modify content, use `update`.
 
 | Option | Purpose | Default |
 |--------|---------|---------|
-| `<uuid>` | Record UUID | |
+| `<uuid...>` | Record UUID(s), or `-` for stdin | |
 | `-n, --name <name>` | Rename record | |
 | `-c, --comment <text>` | Set comment | |
 | `--add-tag <tag>` | Add tag (repeatable) | |
@@ -448,6 +448,12 @@ dt modify ABCD-1234 --no-unread
 
 # Combine operations
 dt modify ABCD-1234 --name "Final Report" --add-tag complete --move-to "/Archive"
+
+# Batch modify multiple records
+dt modify UUID1 UUID2 UUID3 --flag --add-tag "processed"
+
+# Batch modify via stdin
+printf "UUID1\nUUID2\n" | dt modify - --add-tag "batch-tagged"
 ```
 
 #### `dt update` — Update Record Content
@@ -1034,3 +1040,4 @@ dt summarize ABCD-1234 --prompt PROMPT-UUID
 - **Database inference**: When `-g` is a UUID, database can be omitted (derived from group)
 - **Date filters**: Support relative dates like "2 weeks", "3 days"
 - **MCP vs CLI**: Inside Claude Code, prefer MCP tools for direct JSON access
+- **Markdown formatting**: When creating markdown, add backslashes to escape literal characters `\~` to distinguish them from markdown code (`~` = subscript)
