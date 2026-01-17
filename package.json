@@ -1,6 +1,6 @@
 {
   "name": "devonthink-mcp",
-  "version": "2.2.14",
+  "version": "2.2.15",
   "description": "Command-line and MCP interface for DEVONthink 4 on macOS",
   "type": "module",
   "main": "src/index.js",

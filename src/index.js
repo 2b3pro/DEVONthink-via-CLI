@@ -36,6 +36,7 @@ import { registerTagsCommand } from './commands/tags.js';
 import { registerQueueCommand } from './commands/queue.js';
 import { registerSmartGroupCommand } from './commands/smartgroup.js';
 import { registerTreeCommand } from './commands/tree.js';
+import { registerOcrCommand } from './commands/ocr.js';
 import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
@@ -86,6 +87,7 @@ export function createProgram() {
   registerQueueCommand(program);
   registerSmartGroupCommand(program);
   registerTreeCommand(program);
+  registerOcrCommand(program);
 
   // Add completion command
   program
@@ -104,7 +106,7 @@ export function createProgram() {
 function generateCompletion(shell) {
   const commands = [
     'search', 'get', 'list', 'create', 'import', 'index', 'export', 'modify', 'update', 'delete',
-    'replicate', 'duplicate', 'move', 'merge', 'classify', 'group', 'reveal', 'batch', 'status', 'download', 'reading-list', 'convert', 'deconsolidate', 'transcribe', 'chat', 'link', 'unlink', 'mcp', 'organize', 'summarize', 'tags', 'smartgroup', 'tree', 'completion'
+    'replicate', 'duplicate', 'move', 'merge', 'classify', 'group', 'reveal', 'batch', 'status', 'download', 'reading-list', 'convert', 'deconsolidate', 'transcribe', 'chat', 'link', 'unlink', 'mcp', 'organize', 'summarize', 'tags', 'smartgroup', 'tree', 'ocr', 'completion'
   ];
 
   const subcommands = {

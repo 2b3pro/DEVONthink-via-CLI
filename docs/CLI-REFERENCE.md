@@ -1,11 +1,11 @@
 ---
 title: DEVONthink CLI Reference
-version: 2.2.13
-updated: 2026-01-11
-description: CLI for DEVONthink 4. Search, import, organize, tag, transcribe, chat, and batch operations.
+version: 2.2.15
+updated: 2026-01-17
+description: CLI for DEVONthink 4. Search, import, organize, tag, transcribe, chat, OCR, and batch operations.
 ---
 
-# DEVONthink CLI Reference (v2.2.13)
+# DEVONthink CLI Reference (v2.2.15)
 
 > CLI and MCP interface for DEVONthink 4. Search records, import files, organize content, manage tags, transcribe media, AI chat, and batch operations.
 
@@ -514,6 +514,43 @@ dt import "/path/to/recording.m4a" -d "Inbox" --transcribe --language en
 
 # Import with tags
 dt import "/path/to/doc.pdf" -d "Research" -t "important" -t "2024"
+```
+
+#### `dt ocr` — OCR Files or Records
+
+OCR a file or DEVONthink record. With `--output`, saves locally without keeping in DEVONthink.
+
+| Option | Purpose | Default |
+|--------|---------|---------|
+| `<source>` | File path or record UUID | |
+| `-d, --database <name>` | Target/temp database | Inbox |
+| `-g, --to <pathOrUuid>` | Destination group (path or UUID) | / |
+| `-o, --output <path>` | Save OCR result to local path | |
+| `--text` | Extract plain text and save as .txt | |
+| `-n, --as <name>` | Custom name | |
+| `-t, --tag <tag>` | Add tag (repeatable) | |
+| `--type <type>` | OCR output: pdf, rtf, text, html, markdown, docx | pdf |
+| `--comment <text>` | Set comment | |
+| `--background` | Run OCR in background | |
+
+```bash
+# OCR and import to DEVONthink
+dt ocr "/path/to/scan.pdf" -d "Archive"
+
+# OCR and save locally (not kept in DEVONthink)
+dt ocr "/path/to/scan.pdf" --output "/path/to/output.pdf"
+
+# OCR to local file, using specific group for temp storage
+dt ocr scan.pdf --output ./out.pdf -g "8DDFACFE-5142-400C-AA9A-6C4DBF629254"
+
+# OCR existing DEVONthink record and save locally
+dt ocr ABC123-DEF456 --output ./output.pdf
+
+# OCR with specific output type
+dt ocr scan.jpg --output ./result.md --type markdown
+
+# OCR and extract plain text only
+dt ocr scan.pdf --output ./extracted.txt --text
 ```
 
 #### `dt index` — Index External File (Reference)

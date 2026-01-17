@@ -110,6 +110,9 @@ dt queue execute
 
 ### Organization & AI
 - `dt organize <uuid> --auto`: OCR, rename, tag, and summarize a record in one step.
+- `dt ocr <file> --output <path>`: OCR a file and save locally (without keeping in DEVONthink).
+- `dt ocr <file> --output <path> --text`: OCR and extract plain text to a .txt file.
+- `dt ocr <file> -d "Database"`: OCR and import into DEVONthink.
 - `dt summarize <uuid>`: Generate intelligent summaries (Native or AI-powered).
 - `dt chat "question"`: Chat with your documents using any AI engine.
 
