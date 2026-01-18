@@ -37,6 +37,7 @@ import { registerQueueCommand } from './commands/queue.js';
 import { registerSmartGroupCommand } from './commands/smartgroup.js';
 import { registerTreeCommand } from './commands/tree.js';
 import { registerOcrCommand } from './commands/ocr.js';
+import { registerVersionsCommand } from './commands/versions.js';
 import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
@@ -88,6 +89,7 @@ export function createProgram() {
   registerSmartGroupCommand(program);
   registerTreeCommand(program);
   registerOcrCommand(program);
+  registerVersionsCommand(program);
 
   // Add completion command
   program
@@ -106,7 +108,7 @@ export function createProgram() {
 function generateCompletion(shell) {
   const commands = [
     'search', 'get', 'list', 'create', 'import', 'index', 'export', 'modify', 'update', 'delete',
-    'replicate', 'duplicate', 'move', 'merge', 'classify', 'group', 'reveal', 'batch', 'status', 'download', 'reading-list', 'convert', 'deconsolidate', 'transcribe', 'chat', 'link', 'unlink', 'mcp', 'organize', 'summarize', 'tags', 'smartgroup', 'tree', 'ocr', 'completion'
+    'replicate', 'duplicate', 'move', 'merge', 'classify', 'group', 'reveal', 'batch', 'status', 'download', 'reading-list', 'convert', 'deconsolidate', 'transcribe', 'chat', 'link', 'unlink', 'mcp', 'organize', 'summarize', 'tags', 'smartgroup', 'tree', 'ocr', 'versions', 'completion'
   ];
 
   const subcommands = {
@@ -123,7 +125,8 @@ function generateCompletion(shell) {
     organize: [],
     summarize: [],
     tags: ['list', 'analyze', 'merge', 'rename', 'delete', 'normalize', 'config'],
-    smartgroup: ['list', 'create', 'update', 'delete', 'items', 'delete-items', 'modify-items']
+    smartgroup: ['list', 'create', 'update', 'delete', 'items', 'delete-items', 'modify-items'],
+    versions: ['list', 'restore', 'status']
   };
 
   switch (shell) {

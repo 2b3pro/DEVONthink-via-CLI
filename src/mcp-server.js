@@ -308,6 +308,11 @@ Variables like "$1.uuid" can be used to reference results of previous tasks.`,
           description: "How to apply content: setting (replace), inserting (after first line), appending (at end). Default: setting",
           default: "setting"
         },
+        saveVersion: {
+          type: "boolean",
+          description: "Save a version before updating content (uses DEVONthink versioning). Defaults to true. Only applies to update action with content changes.",
+          default: true
+        },
         database: { type: "string", description: "Target database (create)" },
         destination: { type: "string", description: "Destination group UUID or path (create/move)" },
         url: { type: "string", description: "URL (create bookmark/update)" },
@@ -326,6 +331,39 @@ Variables like "$1.uuid" can be used to reference results of previous tasks.`,
       },
       required: ["action"],
     },
+  },
+  {
+    name: "get_versions",
+    description: "Get saved versions of a record. Returns list of versions sorted by date (oldest first). Each version has a UUID that can be used for restoration.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        uuid: { type: "string", description: "The UUID of the record to get versions for" }
+      },
+      required: ["uuid"]
+    }
+  },
+  {
+    name: "restore_version",
+    description: "Restore a saved version of a record. The version is identified by its UUID (obtained from get_versions).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        versionUuid: { type: "string", description: "The UUID of the version record to restore" }
+      },
+      required: ["versionUuid"]
+    }
+  },
+  {
+    name: "get_versioning_status",
+    description: "Get versioning status for a database. Shows whether versioning is enabled and the location of the versions group.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        database: { type: "string", description: "Database name or UUID" },
+        uuid: { type: "string", description: "Get status for the database containing this record (alternative to database parameter)" }
+      }
+    }
   }
 ];
 
@@ -613,7 +651,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case "manage_record": {
         const {
-          action, uuid, name, type, content, contentMode, database, destination,
+          action, uuid, name, type, content, contentMode, saveVersion, database, destination,
           url, tags, addTags, removeTags, comment, label, rating, flag,
           aliases, unread, customMetadata, convertFormat, query
         } = args;
@@ -647,7 +685,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 uuid,
                 text: content,
                 mode: contentMode || "setting",
-                target: "content"
+                target: "content",
+                saveVersion: saveVersion !== false  // Default to true
               })]);
               results.push({ type: "content", ...contentResult });
             }
@@ -737,9 +776,30 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
+      case "get_versions": {
+        const result = await runJxa("read", "getVersions", [JSON.stringify({ uuid: args.uuid })]);
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case "restore_version": {
+        const result = await runJxa("write", "restoreVersion", [JSON.stringify({ versionUuid: args.versionUuid })]);
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case "get_versioning_status": {
+        const params = {};
+        if (args.database) params.database = args.database;
+        if (args.uuid) params.uuid = args.uuid;
+        if (!params.database && !params.uuid) {
+          throw new Error("Either database or uuid parameter is required");
+        }
+        const result = await runJxa("read", "getVersioningStatus", [JSON.stringify(params)]);
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
       case "summarize_record": {
         const { uuid, promptRecord, native, type, format, save = true } = args;
-        
+
         // Native Mode
         if (native) {
              const result = await runJxa('write', 'summarizeNative', [JSON.stringify({

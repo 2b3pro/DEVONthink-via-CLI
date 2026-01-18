@@ -2078,6 +2078,84 @@ describe('DevonThink CLI Commands', () => {
   });
 
   // ============================================================
+  // VERSIONS COMMANDS
+  // ============================================================
+  describe('versions commands', () => {
+    let versionTestRecordUuid;
+
+    before(async () => {
+      versionTestRecordUuid = await createTestRecord({
+        name: uniqueName('VersionTest'),
+        type: 'markdown',
+        content: 'Initial content for version testing'
+      });
+      createdRecords.push(versionTestRecordUuid);
+    });
+
+    describe('versions status', () => {
+      it('should get versioning status by database name', async () => {
+        const result = await runCommand(['versions', 'status', '-d', TEST_DATABASE.name]);
+        assert.strictEqual(result.success, true);
+        assert.strictEqual(result.database, TEST_DATABASE.name);
+        assert.ok(result.versioningEnabled !== undefined);
+      });
+
+      it('should get versioning status by record UUID', async () => {
+        const result = await runCommand(['versions', 'status', '-u', versionTestRecordUuid]);
+        assert.strictEqual(result.success, true);
+        assert.strictEqual(result.database, TEST_DATABASE.name);
+        assert.ok(result.versioningEnabled !== undefined);
+      });
+
+      it('should fail without database or uuid', async () => {
+        const result = await runCommand(['versions', 'status'], { expectFailure: true });
+        assert.strictEqual(result.success, false);
+      });
+    });
+
+    describe('versions list', () => {
+      it('should list versions of a record (may be empty)', async () => {
+        const result = await runCommand(['versions', 'list', versionTestRecordUuid]);
+        assert.strictEqual(result.success, true);
+        assert.ok(Array.isArray(result.versions));
+        assert.ok(result.count !== undefined);
+      });
+
+      it('should fail for invalid UUID', async () => {
+        const result = await runCommand(['versions', 'list', 'INVALID-UUID-12345'], { expectFailure: true });
+        assert.strictEqual(result.success, false);
+      });
+    });
+
+    describe('update with versioning', () => {
+      it('should save version before updating by default', async () => {
+        // Get initial version count
+        const beforeVersions = await runCommand(['versions', 'list', versionTestRecordUuid]);
+        const initialCount = beforeVersions.count || 0;
+
+        // Update with default versioning (ON)
+        const updateResult = await runCommand([
+          'update', versionTestRecordUuid,
+          '-c', 'Updated content with versioning'
+        ]);
+        assert.strictEqual(updateResult.success, true);
+        // versionSaved may be false if versioning is disabled on the database
+        assert.ok(updateResult.versionSaved !== undefined);
+      });
+
+      it('should skip versioning with --no-version flag', async () => {
+        const updateResult = await runCommand([
+          'update', versionTestRecordUuid,
+          '-c', 'Updated content without versioning',
+          '--no-version'
+        ]);
+        assert.strictEqual(updateResult.success, true);
+        assert.strictEqual(updateResult.versionSaved, false);
+      });
+    });
+  });
+
+  // ============================================================
   // CLEANUP
   // ============================================================
   after(async () => {

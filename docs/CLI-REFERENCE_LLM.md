@@ -1,11 +1,11 @@
 ---
 title: DEVONthink CLI Reference
-version: 2.2.15
+version: 2.2.17
 updated: 2026-01-17
-description: CLI for DEVONthink 4. Search, import, organize, tag, transcribe, chat, OCR, and batch operations.
+description: CLI for DEVONthink 4. Search, import, organize, tag, transcribe, chat, OCR, versioning, and batch operations.
 ---
 
-# DEVONthink CLI Reference (v2.2.15)
+# DEVONthink CLI Reference (v2.2.17)
 
 > CLI and MCP interface for DEVONthink 4. Search records, import files, organize content, manage tags, transcribe media, AI chat, and batch operations.
 
@@ -466,9 +466,12 @@ printf "UUID1\nUUID2\n" | dt modify - --add-tag "batch-tagged"
 | `-m, --mode <mode>` | Update mode: setting, inserting, appending | setting |
 | `--comments` | Update comment instead of content | |
 | `--custom-metadata <field>` | Update custom metadata field | |
+| `--no-version` | Skip saving version before update | OFF (versions ON) |
+
+**Versioning:** By default, a version is saved before updating content (uses DEVONthink's versioning). Use `--no-version` to skip.
 
 ```bash
-# Replace content
+# Replace content (saves version by default)
 dt update ABCD-1234 -c "New content"
 
 # Update from file
@@ -479,6 +482,9 @@ dt update ABCD-1234 -c "Additional text" --mode appending
 
 # Update from stdin
 cat notes.md | dt update ABCD-1234 -c -
+
+# Skip versioning
+dt update ABCD-1234 -c "Quick fix" --no-version
 ```
 
 ---
@@ -526,10 +532,10 @@ OCR a file or DEVONthink record. With `--output`, saves locally without keeping 
 | `-d, --database <name>` | Target/temp database | Inbox |
 | `-g, --to <pathOrUuid>` | Destination group (path or UUID) | / |
 | `-o, --output <path>` | Save OCR result to local path | |
-| `--text` | Extract plain text and save as .txt | |
+| `--text` | Extract plain text (to file or stdout) | |
 | `-n, --as <name>` | Custom name | |
 | `-t, --tag <tag>` | Add tag (repeatable) | |
-| `--type <type>` | OCR output: pdf, rtf, text, html, markdown, docx | pdf |
+| `--type <type>` | OCR output: pdf, rtf, text, html, markdown, docx (inferred from --output extension) | pdf |
 | `--comment <text>` | Set comment | |
 | `--background` | Run OCR in background | |
 
@@ -540,17 +546,23 @@ dt ocr "/path/to/scan.pdf" -d "Archive"
 # OCR and save locally (not kept in DEVONthink)
 dt ocr "/path/to/scan.pdf" --output "/path/to/output.pdf"
 
+# OCR to markdown (type inferred from .md extension)
+dt ocr scan.jpg --output ./result.md
+
+# OCR with explicit type override
+dt ocr scan.jpg --output ./notes.txt --type markdown
+
 # OCR to local file, using specific group for temp storage
 dt ocr scan.pdf --output ./out.pdf -g "8DDFACFE-5142-400C-AA9A-6C4DBF629254"
 
 # OCR existing DEVONthink record and save locally
 dt ocr ABC123-DEF456 --output ./output.pdf
 
-# OCR with specific output type
-dt ocr scan.jpg --output ./result.md --type markdown
-
-# OCR and extract plain text only
+# OCR and extract plain text to file
 dt ocr scan.pdf --output ./extracted.txt --text
+
+# OCR and output plain text to stdout (for piping)
+dt ocr scan.pdf --text | grep "keyword"
 ```
 
 #### `dt index` — Index External File (Reference)
@@ -956,6 +968,49 @@ dt mcp run
 
 # Show Claude Desktop config
 dt mcp config
+```
+
+#### `dt versions` — Document Versioning
+
+Manage document versions using DEVONthink's built-in versioning system.
+
+##### `dt versions list` — List Saved Versions
+
+| Option | Purpose | Default |
+|--------|---------|---------|
+| `<uuid>` | Record UUID | |
+| `-q, --quiet` | Only output version UUIDs | |
+
+```bash
+# List versions
+dt versions list ABCD-1234
+
+# Get only UUIDs
+dt versions list ABCD-1234 --quiet
+```
+
+##### `dt versions restore` — Restore a Version
+
+| Option | Purpose |
+|--------|---------|
+| `<version-uuid>` | UUID of the version to restore |
+
+```bash
+# Restore a specific version
+dt versions restore VERSION-UUID
+```
+
+##### `dt versions status` — Versioning Status
+
+| Option | Purpose |
+|--------|---------|
+| `-d, --database <name>` | Database name or UUID |
+| `-u, --uuid <uuid>` | Get status for record's database |
+
+```bash
+# Check versioning status
+dt versions status -d "My Database"
+dt versions status -u ABCD-1234
 ```
 
 ---

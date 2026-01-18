@@ -6,7 +6,7 @@
 
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { resolve, basename, dirname } from 'node:path';
+import { resolve, basename, dirname, extname } from 'node:path';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { runJxa, requireDevonthink } from '../jxa-runner.js';
 import { print, printError } from '../output.js';
@@ -25,7 +25,7 @@ export function registerOcrCommand(program) {
     .option('-n, --as <name>', 'Custom name for output')
     .option('-t, --tag <tag>', 'Add tag (can be used multiple times)', collectTags, [])
     .option('--comment <text>', 'Set comment on record')
-    .option('--type <type>', 'OCR output type (pdf, rtf, text, html, markdown, docx)', 'pdf')
+    .option('--type <type>', 'OCR output type (pdf, rtf, text, html, markdown, docx). Inferred from --output extension if not specified')
     .option('--background', 'Run OCR in background (do not wait for completion)')
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
@@ -45,11 +45,16 @@ Output Modes:
     then exported and deleted. Use -d to control which database is used
     for temp storage (defaults to Inbox). Use -g to specify a subfolder.
 
-  Text extraction (--text): Extract plain text from OCR and save as .txt
-    dt ocr scan.pdf --output ./extracted.txt --text
+  Text extraction (--text): Extract plain text from OCR
+    dt ocr scan.pdf --output ./extracted.txt --text  # Save to file
+    dt ocr scan.pdf --text                           # Output to stdout
 
 OCR Types:
   pdf (default), rtf, text, html, markdown, docx
+
+  With --output, type is inferred from extension:
+    .pdf → pdf, .rtf → rtf, .txt → text, .html → html, .md → markdown, .docx → docx
+  Use --type to override: dt ocr scan.jpg --output notes.txt --type markdown
 
 JSON Output (import mode):
   {
@@ -80,11 +85,17 @@ Examples:
   # OCR existing DEVONthink record and save locally
   dt ocr ABC123-DEF456 --output ./output.pdf
 
-  # OCR with specific output type
-  dt ocr scan.jpg --output ./result.md --type markdown
+  # OCR to markdown (inferred from .md extension)
+  dt ocr scan.jpg --output ./result.md
 
-  # OCR and extract plain text only
+  # OCR with explicit type override
+  dt ocr scan.jpg --output ./notes.txt --type markdown
+
+  # OCR and extract plain text to file
   dt ocr scan.pdf --output ./extracted.txt --text
+
+  # OCR and output plain text to stdout (for piping)
+  dt ocr scan.pdf --text | grep "keyword"
 `)
     .action(async (source, options) => {
       try {
@@ -100,10 +111,19 @@ Examples:
           }
 
           if (options.output) {
-            // Local output mode: OCR -> export -> delete temp record
+            // Local output mode: OCR -> export/text -> delete temp record
             const result = await ocrFileToLocal(filePath, options);
             print(result, options);
             if (!result.success) process.exit(1);
+          } else if (options.text) {
+            // Text to stdout mode: OCR -> extract text -> output to stdout
+            const result = await ocrFileToStdout(filePath, options);
+            if (!result.success) {
+              print(result, options);
+              process.exit(1);
+            }
+            // Output text to stdout (not JSON)
+            process.stdout.write(result.textContent || '');
           } else {
             // Import mode: OCR and keep in DEVONthink
             if (!options.database && !isUuid(options.to)) {
@@ -118,10 +138,19 @@ Examples:
           const uuid = extractUuid(source);
 
           if (options.output) {
-            // Local output mode: convert record -> export -> delete converted
+            // Local output mode: convert record -> export/text -> delete converted
             const result = await ocrRecordToLocal(uuid, options);
             print(result, options);
             if (!result.success) process.exit(1);
+          } else if (options.text) {
+            // Text to stdout mode: OCR -> extract text -> output to stdout
+            const result = await ocrRecordToStdout(uuid, options);
+            if (!result.success) {
+              print(result, options);
+              process.exit(1);
+            }
+            // Output text to stdout (not JSON)
+            process.stdout.write(result.textContent || '');
           } else {
             // Convert in place (creates new record alongside original)
             const result = await ocrRecordInPlace(uuid, options);
@@ -141,6 +170,46 @@ function collectTags(value, previous) {
 }
 
 /**
+ * Infer OCR type from output file extension
+ */
+function inferTypeFromExtension(outputPath) {
+  if (!outputPath) return null;
+
+  const ext = extname(outputPath).toLowerCase();
+  const extMap = {
+    '.pdf': 'pdf',
+    '.rtf': 'rtf',
+    '.txt': 'text',
+    '.html': 'html',
+    '.htm': 'html',
+    '.md': 'markdown',
+    '.markdown': 'markdown',
+    '.docx': 'docx'
+  };
+
+  return extMap[ext] || null;
+}
+
+/**
+ * Resolve OCR type: explicit --type > inferred from extension > default (pdf)
+ */
+function resolveOcrType(options) {
+  // Explicit --type takes precedence
+  if (options.type) {
+    return options.type;
+  }
+
+  // Infer from --output extension
+  if (options.output) {
+    const inferred = inferTypeFromExtension(options.output);
+    if (inferred) return inferred;
+  }
+
+  // Default to pdf
+  return 'pdf';
+}
+
+/**
  * OCR a local file and save to local path (temp import -> export -> delete)
  */
 async function ocrFileToLocal(filePath, options) {
@@ -152,7 +221,7 @@ async function ocrFileToLocal(filePath, options) {
     mkdirSync(outputDir, { recursive: true });
   }
 
-  const ocrType = mapOcrType(options.type);
+  const ocrType = mapOcrType(resolveOcrType(options));
   const waitForReply = options.background !== true;
   const dbRef = options.database;
   const destRef = options.to;
@@ -222,7 +291,7 @@ ${destNavCode}`;
   const textContent = record.plainText();
 
   // Delete the temporary record from DEVONthink
-  app.delete(record);
+  app.delete({record: record});
 
   JSON.stringify({
     success: true,
@@ -242,7 +311,7 @@ ${destNavCode}`;
   });
 
   // Delete the temporary record from DEVONthink
-  app.delete(record);
+  app.delete({record: record});
 
   JSON.stringify({
     success: true,
@@ -305,6 +374,107 @@ ${outputCode}
 }
 
 /**
+ * OCR a local file and output text to stdout (temp import -> extract text -> delete)
+ */
+async function ocrFileToStdout(filePath, options) {
+  const ocrType = mapOcrType(resolveOcrType(options));
+  const waitForReply = options.background !== true;
+  const dbRef = options.database;
+  const destRef = options.to;
+
+  // Build JXA to resolve temp destination (same as ocrFileToLocal)
+  let tempDestCode;
+  if (isUuid(destRef)) {
+    const groupUuid = extractUuid(destRef);
+    tempDestCode = `
+  var tempDest = app.getRecordWithUuid("${groupUuid}");
+  if (!tempDest) throw new Error("Group not found: ${groupUuid}");
+  var db = tempDest.database();`;
+  } else if (dbRef) {
+    const escapedDbRef = escapeString(dbRef);
+    const extractedDbUuid = extractUuid(dbRef);
+    let destNavCode;
+    if (destRef && destRef !== '/') {
+      const cleanPath = destRef.replace(/^\//, '');
+      const escapedPath = escapeString(cleanPath);
+      destNavCode = `
+  const pathParts = "${escapedPath}".split("/");
+  var tempDest = db.root();
+  for (const part of pathParts) {
+    if (!part) continue;
+    const children = tempDest.children.whose({name: part, type: "group"});
+    if (children.length === 0) throw new Error("Group not found: " + part);
+    tempDest = children[0];
+  }`;
+    } else {
+      destNavCode = `
+  const downloadGroups = db.root().children.whose({name: "Downloads", type: "group"});
+  var tempDest = downloadGroups.length > 0 ? downloadGroups[0] : db.root();`;
+    }
+    tempDestCode = `
+  const dbs = app.databases.whose({name: "${escapedDbRef}"});
+  if (dbs.length === 0) {
+    const dbByUuid = app.databases.whose({uuid: "${extractedDbUuid}"});
+    if (dbByUuid.length === 0) throw new Error("Database not found: ${escapedDbRef}");
+    var db = dbByUuid[0];
+  } else {
+    var db = dbs[0];
+  }
+${destNavCode}`;
+  } else {
+    tempDestCode = `
+  var tempDest = app.incomingGroup();
+  var db = { name: function() { return "Inbox"; } };`;
+  }
+
+  const jxaScript = `
+ObjC.import("Foundation");
+
+try {
+  const app = Application("DEVONthink");
+${tempDestCode}
+
+  const ocrOptions = {
+    file: "${escapeString(filePath)}",
+    to: tempDest,
+    waitingForReply: ${waitForReply}
+  };
+  ${ocrType ? `ocrOptions.type = "${ocrType}";` : ''}
+
+  const record = app.ocr(ocrOptions);
+
+  if (!record) {
+    throw new Error("OCR failed or returned no record");
+  }
+
+  const textContent = record.plainText();
+  app.delete({record: record});
+
+  JSON.stringify({
+    success: true,
+    textContent: textContent,
+    originalFile: "${escapeString(filePath)}"
+  }, null, 2);
+
+} catch (e) {
+  JSON.stringify({ success: false, error: e.message });
+}
+`;
+
+  if (process.env.DEBUG) {
+    console.error('Generated JXA script:\n' + jxaScript);
+  }
+
+  const { stdout } = await execFileAsync(
+    'osascript',
+    ['-l', 'JavaScript', '-e', jxaScript],
+    { timeout: 300000, maxBuffer: 10 * 1024 * 1024 }
+  );
+
+  return JSON.parse(stdout.trim());
+}
+
+/**
  * OCR a local file and import to DEVONthink
  */
 async function ocrFileToDevonthink(filePath, options) {
@@ -313,7 +483,7 @@ async function ocrFileToDevonthink(filePath, options) {
   const customName = options.as ? escapeString(options.as) : null;
   const tags = options.tag || [];
   const comment = options.comment ? escapeString(options.comment) : null;
-  const ocrType = mapOcrType(options.type);
+  const ocrType = mapOcrType(resolveOcrType(options));
   const waitForReply = options.background !== true;
 
   const jxaScript = `
@@ -389,7 +559,7 @@ async function ocrRecordToLocal(uuid, options) {
     mkdirSync(outputDir, { recursive: true });
   }
 
-  const ocrType = mapOcrType(options.type);
+  const ocrType = mapOcrType(resolveOcrType(options));
   const waitForReply = options.background !== true;
   const extractText = options.text === true;
 
@@ -401,7 +571,7 @@ async function ocrRecordToLocal(uuid, options) {
   const textContent = ocrRecord.plainText();
 
   // Delete the OCR'd record (we only wanted the text)
-  app.delete(ocrRecord);
+  app.delete({record: ocrRecord});
 
   JSON.stringify({
     success: true,
@@ -420,7 +590,7 @@ async function ocrRecordToLocal(uuid, options) {
   });
 
   // Delete the OCR'd record (we only wanted the export)
-  app.delete(ocrRecord);
+  app.delete({record: ocrRecord});
 
   JSON.stringify({
     success: true,
@@ -485,13 +655,71 @@ ${outputCode}
 }
 
 /**
+ * OCR an existing DEVONthink record and output text to stdout
+ */
+async function ocrRecordToStdout(uuid, options) {
+  const ocrType = mapOcrType(resolveOcrType(options));
+  const waitForReply = options.background !== true;
+
+  const jxaScript = `
+ObjC.import("Foundation");
+
+try {
+  const app = Application("DEVONthink");
+
+  const sourceRecord = app.getRecordWithUuid("${uuid}");
+  if (!sourceRecord) {
+    throw new Error("Record not found: ${uuid}");
+  }
+
+  const convertOptions = {
+    record: sourceRecord,
+    waitingForReply: ${waitForReply}
+  };
+  ${ocrType ? `convertOptions.type = "${ocrType}";` : ''}
+
+  const ocrRecord = app.convertImage(convertOptions);
+
+  if (!ocrRecord) {
+    throw new Error("OCR conversion failed or returned no record");
+  }
+
+  const textContent = ocrRecord.plainText();
+  app.delete({record: ocrRecord});
+
+  JSON.stringify({
+    success: true,
+    textContent: textContent,
+    sourceUuid: "${uuid}",
+    sourceName: sourceRecord.name()
+  }, null, 2);
+
+} catch (e) {
+  JSON.stringify({ success: false, error: e.message });
+}
+`;
+
+  if (process.env.DEBUG) {
+    console.error('Generated JXA script:\n' + jxaScript);
+  }
+
+  const { stdout } = await execFileAsync(
+    'osascript',
+    ['-l', 'JavaScript', '-e', jxaScript],
+    { timeout: 300000, maxBuffer: 10 * 1024 * 1024 }
+  );
+
+  return JSON.parse(stdout.trim());
+}
+
+/**
  * OCR an existing DEVONthink record in place (creates new record alongside)
  */
 async function ocrRecordInPlace(uuid, options) {
   const customName = options.as ? escapeString(options.as) : null;
   const tags = options.tag || [];
   const comment = options.comment ? escapeString(options.comment) : null;
-  const ocrType = mapOcrType(options.type);
+  const ocrType = mapOcrType(resolveOcrType(options));
   const destRef = options.to;
   const waitForReply = options.background !== true;
 

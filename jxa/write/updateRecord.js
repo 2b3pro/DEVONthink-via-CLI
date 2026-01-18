@@ -1,9 +1,9 @@
 #!/usr/bin/env osascript -l JavaScript
 // Update content, comment, or custom metadata of a DEVONthink record
 // Usage: osascript -l JavaScript updateRecord.js '<json>'
-// JSON format: {"uuid":"...","text":"...","mode":"setting|inserting|appending","target":"content|comment|customMetadata","customMetadataField":"...","url":"..."}
+// JSON format: {"uuid":"...","text":"...","mode":"setting|inserting|appending","target":"content|comment|customMetadata","customMetadataField":"...","url":"...","saveVersion":true}
 // Required: uuid, text
-// Optional: mode (default: setting), target (default: content), customMetadataField (required when target=customMetadata), url
+// Optional: mode (default: setting), target (default: content), customMetadataField (required when target=customMetadata), url, saveVersion (default: false)
 //
 // Targets:
 //   content - Update plainText (default). Supported: plain text, rich text, Markdown, HTML, formatted notes
@@ -34,7 +34,7 @@ if (!jsonArg) {
 } else {
   try {
     const params = JSON.parse(jsonArg);
-    const { uuid, text, url, customMetadataField } = params;
+    const { uuid, text, url, customMetadataField, saveVersion } = params;
     const mode = params.mode || "setting";
     const target = params.target || "content";
 
@@ -63,6 +63,18 @@ if (!jsonArg) {
     const recordType = record.recordType();
     let success = false;
     let updatedValue = text;
+    let versionSaved = false;
+
+    // Save version BEFORE editing (per DEVONthink docs: "use this command right before editing")
+    if (saveVersion && target === "content") {
+      try {
+        const savedVersion = app.saveVersionOf({ record: record });
+        versionSaved = savedVersion ? true : false;
+      } catch (versionErr) {
+        // Versioning may not be enabled for this database - continue without failing
+        versionSaved = false;
+      }
+    }
 
     // Helper function to apply mode to string properties
     function applyMode(currentValue, newValue, mode) {
@@ -121,7 +133,8 @@ if (!jsonArg) {
         recordType: recordType,
         target: target,
         mode: mode,
-        textLength: text.length
+        textLength: text.length,
+        versionSaved: versionSaved
       };
       if (target === "customMetadata") {
         result.field = customMetadataField;

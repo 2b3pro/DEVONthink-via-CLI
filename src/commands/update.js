@@ -20,6 +20,7 @@ export function registerUpdateCommand(program) {
     .option('-u, --url <url>', 'URL associated with the text')
     .option('--comments', 'Update the comment property instead of content')
     .option('--custom-metadata <field>', 'Update a custom metadata field instead of content')
+    .option('--no-version', 'Skip saving a version before updating (versioning is ON by default)')
     .option('--json', 'Output raw JSON')
     .option('--pretty', 'Pretty print JSON output')
     .option('-q, --quiet', 'Minimal output')
@@ -33,11 +34,13 @@ JSON Output:
     "target": "content|comment|customMetadata",
     "mode": "setting|inserting|appending",
     "textLength": number,
+    "versionSaved": boolean,
     "field": "string" // optional (for customMetadata)
   }
 
 Examples:
-  dt update ABCD-1234 -c "New content"
+  dt update ABCD-1234 -c "New content"             # Saves version by default
+  dt update ABCD-1234 -c "New content" --no-version   # Skip versioning
   dt update ABCD-1234 -f ./notes.md --comments
 `)
     .action(async (uuid, options) => {
@@ -80,7 +83,8 @@ Examples:
         const params = {
           uuid,
           text,
-          mode
+          mode,
+          saveVersion: options.version !== false  // --no-version sets version to false
         };
 
         if (options.url) {
